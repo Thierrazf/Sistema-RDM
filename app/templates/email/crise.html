@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head><meta charset="utf-8"><title>{{ crise.identificador }}</title></head>
+<body style="margin:0; background:#eaeef2;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;">
+<tr><td align="center">
+<table role="presentation" width="620" cellpadding="0" cellspacing="0"
+       style="width:620px; max-width:100%; background:#fff; border:1px solid #d3dae2;
+              font-family:'Segoe UI',Arial,sans-serif; font-size:14px; color:#0e1620;">
+  <tr>
+    <td style="background:#9d2220; padding:20px 24px;">
+      <div style="font-family:Consolas,monospace; font-size:11px; letter-spacing:2px;
+                  color:#f8d7d5; text-transform:uppercase;">Comunicado de crise · {{ crise.identificador }}</div>
+      <div style="color:#fff; font-size:18px; font-weight:600; margin-top:5px;">{{ crise.titulo }}</div>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:22px 24px;">
+      <p style="margin-top:0;">Prezados,</p>
+      <p>
+        Comunicamos a situação abaixo, registrada pela equipe de TI. As atualizações
+        seguirão por este mesmo canal até o encerramento.
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="border:1px solid #d3dae2; border-collapse:collapse; margin:14px 0;">
+        <tr><td style="padding:8px 12px; border-bottom:1px solid #eef2f6; width:130px; color:#5b6c7f;">Situação</td>
+            <td style="padding:8px 12px; border-bottom:1px solid #eef2f6;">{{ crise.status }}</td></tr>
+        <tr><td style="padding:8px 12px; border-bottom:1px solid #eef2f6; color:#5b6c7f;">Criticidade</td>
+            <td style="padding:8px 12px; border-bottom:1px solid #eef2f6;">{{ crise.criticidade.value }}</td></tr>
+        <tr><td style="padding:8px 12px; border-bottom:1px solid #eef2f6; color:#5b6c7f;">Local</td>
+            <td style="padding:8px 12px; border-bottom:1px solid #eef2f6;">{{ crise.local or '—' }}</td></tr>
+        <tr><td style="padding:8px 12px; color:#5b6c7f;">Aberta em</td>
+            <td style="padding:8px 12px;">{{ crise.criado_em.strftime('%d/%m/%Y %H:%M') }}</td></tr>
+      </table>
+      <div style="font-weight:600;">Problema</div>
+      <div style="white-space:pre-line;">{{ crise.problema }}</div>
+      {% if crise.solucao %}
+      <div style="font-weight:600; margin-top:14px;">Solução aplicada</div>
+      <div style="white-space:pre-line;">{{ crise.solucao }}</div>
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#f5f8fa; border-top:1px solid #d3dae2; padding:14px 24px;
+               font-size:12px; color:#5b6c7f;">
+      Mensagem gerada automaticamente pelo sistema de gestão de crises.
+    </td>
+  </tr>
+</table>
+</td></tr></table>
+</body>
+</html>

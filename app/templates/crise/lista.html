@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Crises{% endblock %}
+{% block sobretitulo %}Operação{% endblock %}
+{% block cabecalho %}Crises{% endblock %}
+{% block acoes %}
+  <a href="{{ url_for('crise.nova') }}" class="botao botao-primario">Abrir crise</a>
+{% endblock %}
+{% block conteudo %}
+<div class="cartao">
+  {% if paginacao.items %}
+  <table class="tabela">
+    <thead>
+      <tr><th style="width:130px;">Número</th><th>Título</th>
+          <th style="width:110px;">Criticidade</th><th style="width:150px;">Aberta em</th>
+          <th style="width:100px;">Situação</th></tr>
+    </thead>
+    <tbody>
+      {% for c in paginacao.items %}
+      <tr>
+        <td><a href="{{ url_for('crise.detalhe', crise_id=c.id) }}" class="mono pequeno">{{ c.identificador }}</a></td>
+        <td>
+          <div style="font-weight:500;">{{ c.titulo }}</div>
+          <div class="pequeno silencioso">{{ c.local or 'Local não informado' }}</div>
+        </td>
+        <td>{{ m.etiqueta_criticidade(c.criticidade) }}</td>
+        <td class="mono pequeno">{{ c.criado_em|dt }}</td>
+        <td>
+          <span class="etiqueta etiqueta-{{ 'neutra' if c.status == 'Fechada' else 'vermelha' }}">{{ c.status }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {{ m.paginacao(paginacao, 'crise.lista') }}
+  {% else %}
+  <div class="vazio">
+    <div class="vazio-titulo">Nenhuma crise registrada</div>
+    <p class="pequeno">Registre uma ocorrência para acompanhar a linha do tempo e comunicar as áreas.</p>
+    <a href="{{ url_for('crise.nova') }}" class="botao botao-primario">Abrir crise</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}{{ crise.identificador }}{% endblock %}
+{% block sobretitulo %}{{ crise.identificador }}{% endblock %}
+{% block cabecalho %}{{ crise.titulo }}{% endblock %}
+{% block acoes %}
+  <a href="{{ url_for('crise.pdf', crise_id=crise.id) }}" class="botao" target="_blank" rel="noopener">PDF</a>
+{% endblock %}
+{% block conteudo %}
+
+<div style="display:flex; gap:8px; margin-bottom:18px; align-items:center; flex-wrap:wrap;">
+  <span class="etiqueta etiqueta-{{ 'neutra' if crise.status == 'Fechada' else 'vermelha' }}">{{ crise.status }}</span>
+  {{ m.etiqueta_criticidade(crise.criticidade) }}
+  <span class="pequeno silencioso">aberta em {{ crise.criado_em|dt }}</span>
+  {% if crise.encerrado_em %}<span class="pequeno silencioso">· encerrada em {{ crise.encerrado_em|dt }}</span>{% endif %}
+</div>
+
+<div class="grade grade-2">
+  <div>
+    <div class="cartao">
+      <div class="cartao-topo"><h2 class="cartao-titulo">Situação</h2></div>
+      <div class="cartao-corpo">
+        <dl class="lista-definicao">
+          <dt>Local</dt><dd>{{ crise.local or '—' }}</dd>
+          <dt>Origem</dt><dd>{{ crise.origem or '—' }}</dd>
+          <dt>Aberta por</dt><dd>{{ crise.aberta_por.nome if crise.aberta_por else '—' }}</dd>
+        </dl>
+        <div class="rotulo" style="margin-top:14px;">Problema</div>
+        <p style="margin-top:0; white-space:pre-line;">{{ crise.problema }}</p>
+        <div class="rotulo">Causa raiz</div>
+        <p style="margin-top:0; white-space:pre-line;">{{ crise.causa_raiz or 'Em apuração.' }}</p>
+        <div class="rotulo">Solução</div>
+        <p style="margin:0; white-space:pre-line;">{{ crise.solucao or 'Não informada.' }}</p>
+      </div>
+    </div>
+
+    {% if crise.status != 'Fechada' %}
+    <div class="cartao">
+      <div class="cartao-topo"><h2 class="cartao-titulo">Encerrar</h2></div>
+      <form method="post" action="{{ url_for('crise.encerrar', crise_id=crise.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="cartao-corpo">
+          <div class="campo">
+            <label for="causa_raiz">Causa raiz</label>
+            <textarea id="causa_raiz" name="causa_raiz">{{ crise.causa_raiz or '' }}</textarea>
+          </div>
+          <div class="campo">
+            <label for="solucao">Solução aplicada</label>
+            <textarea id="solucao" name="solucao">{{ crise.solucao or '' }}</textarea>
+          </div>
+          <button type="submit" class="botao botao-primario">Encerrar crise</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="cartao">
+    <div class="cartao-topo"><h2 class="cartao-titulo">Linha do tempo</h2></div>
+    <div class="cartao-corpo">
+      <form method="post" action="{{ url_for('crise.andamento', crise_id=crise.id) }}"
+            style="margin-bottom:18px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="campo">
+          <label for="texto">Registrar andamento</label>
+          <textarea id="texto" name="texto" rows="2" required></textarea>
+        </div>
+        {% if current_user.pode_disparar_email %}
+        <div class="marcador" style="margin-bottom:8px;">
+          <input type="checkbox" id="enviar_email" name="enviar_email">
+          <label for="enviar_email">Enviar comunicado por e-mail</label>
+        </div>
+        <div class="campo">
+          <label for="destinatarios">Destinatários</label>
+          <input type="text" id="destinatarios" name="destinatarios"
+                 placeholder="separe por vírgula">
+        </div>
+        {% endif %}
+        <button type="submit" class="botao botao-primario">Registrar</button>
+      </form>
+
+      {% for log in crise.logs %}
+      <div class="registro">
+        <div class="registro-marca">{{ log.criado_em|dt('%d/%m/%y %H:%M') }}</div>
+        <div>
+          <div class="registro-texto">{{ log.descricao }}</div>
+          <div class="registro-autor">{{ log.usuario_nome }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

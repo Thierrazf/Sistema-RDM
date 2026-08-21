@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block titulo %}{{ 'Novo usuário' if modo == 'novo' else u.nome }}{% endblock %}
+
+{% block sobretitulo %}Administração{% endblock %}
+{% block cabecalho %}{{ 'Novo usuário' if modo == 'novo' else 'Editar ' ~ u.nome }}{% endblock %}
+{% block conteudo %}
+{% set acao = url_for('admin.usuario_novo') if modo == 'novo' else url_for('admin.usuario_editar', user_id=u.id) %}
+<form method="post" action="{{ acao }}" class="cartao" style="max-width:620px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="cartao-corpo">
+    <div class="campo">
+      <label for="nome">Nome completo *</label>
+      <input type="text" id="nome" name="nome" required value="{{ u.nome if u else '' }}">
+    </div>
+    <div class="linha-campos linha-2">
+      <div class="campo">
+        <label for="cargo">Cargo ou patente</label>
+        <input type="text" id="cargo" name="cargo" value="{{ u.cargo if u else '' }}"
+               placeholder="Ex.: 2º Ten, Ten Cel, Analista">
+        <div class="ajuda">Aparece junto do nome na RDM, no e-mail e no PDF.</div>
+      </div>
+      <div class="campo">
+        <label for="telefone">Telefone</label>
+        <input type="tel" id="telefone" name="telefone" value="{{ u.telefone if u else '' }}">
+      </div>
+    </div>
+
+    <div class="campo">
+      <label for="email">E-mail corporativo *</label>
+      <input type="email" id="email" name="email" required value="{{ u.email if u else '' }}">
+      <div class="ajuda">Apenas domínios autorizados na configuração do sistema.</div>
+    </div>
+    <div class="linha-campos linha-2">
+      <div class="campo">
+        <label for="perfil">Perfil</label>
+        <select id="perfil" name="perfil">
+          {% for p in Perfil %}
+          <option value="{{ p.name }}" {{ 'selected' if u and u.perfil == p }}>{{ p.value }}</option>
+          {% endfor %}
+        </select>
+        <div class="ajuda">Gestor aprova RDMs e envia comunicados. Administrador também gerencia usuários.</div>
+      </div>
+      <div class="campo">
+        <label for="equipe">Equipe</label>
+        <select id="equipe" name="equipe">
+          <option value="">Não definida</option>
+          {% for e in Equipe %}
+          <option value="{{ e.name }}" {{ 'selected' if u and u.equipe == e }}>{{ e.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="marcador" style="margin-bottom:14px;">
+      <input type="checkbox" id="somente_referencia" name="somente_referencia"
+             {{ 'checked' if u and u.somente_referencia }}
+             {{ 'disabled' if u and u.id == current_user.id }}>
+      <label for="somente_referencia">
+        Apenas referência — não acessa o sistema
+        <span class="ajuda" style="font-weight:400;">
+          Para quem assina ou autoriza a RDM sem precisar de login, como as
+          autoridades da corporação. Dispensa senha.
+        </span>
+      </label>
+    </div>
+
+    {% if modo == 'novo' %}
+    <div class="campo" id="bloco-senha">
+      <label for="senha">Senha inicial</label>
+      <input type="password" id="senha" name="senha" autocomplete="new-password">
+      <div class="ajuda">
+        Mínimo de 10 caracteres com maiúscula, minúscula, número e caractere especial.
+        A troca será exigida no primeiro acesso. Não é usada para pessoa de referência.
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="marcador">
+      <input type="checkbox" id="pode_enviar_email" name="pode_enviar_email"
+             {{ 'checked' if u and u.pode_enviar_email }}>
+      <label for="pode_enviar_email">Pode disparar comunicados por e-mail</label>
+    </div>
+
+    {% if modo == 'editar' and u.id != current_user.id %}
+    <div class="marcador" style="margin-top:10px;">
+      <input type="checkbox" id="ativo" name="ativo" {{ 'checked' if u.ativo }}>
+      <label for="ativo">Conta ativa</label>
+    </div>
+    {% endif %}
+  </div>
+  <div class="barra-acoes">
+    <a href="{{ url_for('admin.usuarios') }}" class="botao">Cancelar</a>
+    <button type="submit" class="botao botao-primario">
+      {{ 'Criar usuário' if modo == 'novo' else 'Salvar alterações' }}
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/usuario_form.js') }}"></script>
+{% endblock %}

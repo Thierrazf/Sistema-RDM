@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Usuários{% endblock %}
+{% block sobretitulo %}Administração{% endblock %}
+{% block cabecalho %}Usuários{% endblock %}
+{% block acoes %}
+  <a href="{{ url_for('admin.usuario_novo') }}" class="botao botao-primario">Novo usuário</a>
+{% endblock %}
+{% block conteudo %}
+<div class="cartao">
+  <table class="tabela">
+    <thead>
+      <tr><th>Nome</th><th>E-mail</th><th style="width:120px;">Perfil</th>
+          <th style="width:170px;">Equipe</th><th style="width:150px;">Último acesso</th>
+          <th class="col-acoes" style="width:250px;">Ações</th></tr>
+    </thead>
+    <tbody>
+      {% for u in usuarios %}
+      <tr {% if not u.ativo %}style="opacity:.55;"{% endif %}>
+        <td>
+          <div style="font-weight:500;">{{ u.nome_completo }}</div>
+          <div style="display:flex; gap:5px; margin-top:3px;">
+            {% if not u.ativo %}<span class="etiqueta etiqueta-neutra">Inativo</span>{% endif %}
+            {% if u.somente_referencia %}<span class="etiqueta etiqueta-azul">Sem acesso</span>{% endif %}
+            {% if u.bloqueado %}<span class="etiqueta etiqueta-vermelha">Bloqueado</span>{% endif %}
+            {% if u.trocar_senha and not u.somente_referencia %}<span class="etiqueta etiqueta-ambar">Troca pendente</span>{% endif %}
+            {% if u.pode_disparar_email %}<span class="etiqueta etiqueta-verde">Envia e-mail</span>{% endif %}
+          </div>
+        </td>
+        <td class="pequeno mono">{{ u.email }}</td>
+        <td class="pequeno">{{ u.perfil.value }}</td>
+        <td class="pequeno">{{ u.equipe.value if u.equipe else '—' }}</td>
+        <td class="pequeno mono">{{ u.ultimo_acesso|dt('%d/%m/%y %H:%M') }}</td>
+        <td class="col-acoes">
+          <a href="{{ url_for('admin.usuario_editar', user_id=u.id) }}" class="botao botao-mini">Editar</a>
+          <form method="post" style="display:inline;"
+                action="{{ url_for('admin.usuario_senha_temporaria', user_id=u.id) }}"
+                onsubmit="return confirm('Gerar senha temporária para {{ u.nome }}?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="botao botao-mini">Senha temporária</button>
+          </form>
+          {% if u.ativo and u.id != current_user.id %}
+          <form method="post" style="display:inline;"
+                action="{{ url_for('admin.usuario_desativar', user_id=u.id) }}"
+                onsubmit="return confirm('Desativar {{ u.nome }}?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="botao botao-mini botao-perigo">Desativar</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="pequeno silencioso">
+  Senhas temporárias são exibidas uma única vez e exigem troca no primeiro acesso.
+  Entregue pessoalmente, nunca por e-mail ou mensagem.
+</p>
+{% endblock %}

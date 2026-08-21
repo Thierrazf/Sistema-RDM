@@ -1,0 +1,35 @@
+{{ introducao }}
+{% if observacao %}
+{{ observacao }}
+{% endif %}
+================================================================
+{{ rdm.identificador }} - {{ rdm.titulo }}
+================================================================
+Sistema........: {{ rdm.sistema or 'nao informado' }}{% if rdm.ambiente %} ({{ rdm.ambiente }}){% endif %}
+
+Inicio.........: {{ rdm.inicio_previsto.strftime('%d/%m/%Y %H:%M') if rdm.inicio_previsto else 'a definir' }}
+Fim previsto...: {{ rdm.fim_previsto.strftime('%d/%m/%Y %H:%M') if rdm.fim_previsto else 'a definir' }}
+Duracao........: {{ rdm.duracao_formatada }}
+Criticidade....: {{ rdm.criticidade.value }}{% if rdm.emergencial %}
+Tipo...........: MUDANCA EMERGENCIAL{% endif %}{% if rdm.indisponibilidade %}
+Atencao........: havera indisponibilidade de servico durante a janela.{% endif %}
+
+PLANO DE TRABALHO
+{% for equipe, atividades in grupos.items() %}
+-- {{ equipe.value }} --
+{% for a in atividades %}{{ '%02d'|format(a.ordem) }}. {{ a.descricao }}
+    Analista: {{ a.nome_analista }} | Duracao: {{ a.duracao_formatada }}{% if a.rollback %}
+    Rollback: {{ a.rollback }}{% endif %}
+{% endfor %}
+{% endfor %}
+PLANO DE ROLLBACK
+{{ rdm.plano_rollback or 'Nao informado.' }}{% if rdm.tempo_rollback_min %}
+Tempo estimado de retorno: {{ rdm.tempo_rollback_min }} minutos.{% endif %}
+
+Solicitante....: {{ rdm.solicitante.nome_completo if rdm.solicitante else '-' }}{% if rdm.revisor %}
+Revisor........: {{ rdm.revisor.nome_completo }}{% endif %}{% if rdm.autorizado_por %}
+Autorizado por.: {{ rdm.autorizado_por }}{% if rdm.autorizado_cargo %} - {{ rdm.autorizado_cargo }}{% endif %}{% endif %}
+
+--
+{{ assinatura }}
+Mensagem gerada automaticamente pelo sistema de gestao de mudancas.

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>{{ crise.identificador }}</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm;
+    @bottom-center { content: "{{ crise.identificador }} · página " counter(page) " de " counter(pages);
+                     font-family: monospace; font-size: 8pt; color: #5b6c7f; } }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5pt; color: #0e1620; line-height: 1.45; }
+  h1 { font-size: 15pt; margin: 0 0 2mm; }
+  .sobre { font-family: monospace; font-size: 8pt; letter-spacing: 1.4px;
+           text-transform: uppercase; color: #9d2220; }
+  .cabecalho { border-bottom: 2pt solid #9d2220; padding-bottom: 4mm; margin-bottom: 5mm; }
+  .secao { font-family: monospace; font-size: 8pt; letter-spacing: 1.2px; text-transform: uppercase;
+           color: #5b6c7f; border-bottom: 0.5pt solid #d3dae2; padding-bottom: 1.5mm; margin: 6mm 0 3mm; }
+  table { width: 100%; border-collapse: collapse; }
+  .dados td { padding: 1.6mm 2mm; border-bottom: 0.4pt solid #eef2f6; vertical-align: top; }
+  .dados td.rot { width: 34mm; color: #5b6c7f; }
+  .caixa { border: 0.5pt solid #d3dae2; padding: 3mm; white-space: pre-line; }
+  .reg td { padding: 1.8mm 2mm; border-bottom: 0.4pt solid #eef2f6; vertical-align: top; }
+  .reg td.quando { width: 32mm; font-family: monospace; font-size: 8pt; color: #5b6c7f; }
+</style>
+</head>
+<body>
+<div class="cabecalho">
+  <div class="sobre">Registro de crise · {{ crise.identificador }}</div>
+  <h1>{{ crise.titulo }}</h1>
+</div>
+
+<table class="dados">
+  <tr><td class="rot">Situação</td><td>{{ crise.status }}</td>
+      <td class="rot">Criticidade</td><td>{{ crise.criticidade.value }}</td></tr>
+  <tr><td class="rot">Local</td><td>{{ crise.local or '—' }}</td>
+      <td class="rot">Origem</td><td>{{ crise.origem or '—' }}</td></tr>
+  <tr><td class="rot">Aberta por</td><td>{{ crise.aberta_por.nome if crise.aberta_por else '—' }}</td>
+      <td class="rot">Aberta em</td><td>{{ crise.criado_em.strftime('%d/%m/%Y %H:%M') }}</td></tr>
+  <tr><td class="rot">Emitido em</td><td colspan="3">{{ emitido_em }}</td></tr>
+</table>
+
+<div class="secao">Problema</div>
+<div class="caixa">{{ crise.problema }}</div>
+
+<div class="secao">Causa raiz</div>
+<div class="caixa">{{ crise.causa_raiz or 'Em apuração.' }}</div>
+
+<div class="secao">Solução aplicada</div>
+<div class="caixa">{{ crise.solucao or 'Não informada.' }}</div>
+
+<div class="secao">Linha do tempo</div>
+<table class="reg">
+  {% for log in crise.logs|reverse %}
+  <tr>
+    <td class="quando">{{ log.criado_em.strftime('%d/%m/%y %H:%M') }}</td>
+    <td>{{ log.descricao }}<br><span style="color:#5b6c7f; font-size:8.5pt;">{{ log.usuario_nome }}</span></td>
+  </tr>
+  {% endfor %}
+</table>
+</body>
+</html>

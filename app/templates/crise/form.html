@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block titulo %}Abrir crise{% endblock %}
+{% block sobretitulo %}Crises{% endblock %}
+{% block cabecalho %}Abrir crise{% endblock %}
+{% block conteudo %}
+<form method="post" class="cartao" style="max-width:760px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="cartao-corpo">
+    <div class="campo">
+      <label for="titulo">Título *</label>
+      <input type="text" id="titulo" name="titulo" required maxlength="200"
+             placeholder="Ex.: Indisponibilidade do portal do beneficiário">
+    </div>
+    <div class="campo">
+      <label for="problema">Problema *</label>
+      <textarea id="problema" name="problema" required rows="4"
+                placeholder="O que está acontecendo, desde quando e quem é afetado."></textarea>
+    </div>
+    <div class="linha-campos linha-3">
+      <div class="campo">
+        <label for="local">Local</label>
+        <input type="text" id="local" name="local">
+      </div>
+      <div class="campo">
+        <label for="origem">Origem</label>
+        <input type="text" id="origem" name="origem">
+      </div>
+      <div class="campo">
+        <label for="criticidade">Criticidade</label>
+        <select id="criticidade" name="criticidade">
+          {% for c in criticidades %}
+          <option value="{{ c.name }}" {{ 'selected' if c.name == 'ALTA' }}>{{ c.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="linha-campos linha-2">
+      <div class="campo">
+        <label for="causa_raiz">Causa raiz (se já conhecida)</label>
+        <textarea id="causa_raiz" name="causa_raiz"></textarea>
+      </div>
+      <div class="campo">
+        <label for="solucao">Solução aplicada</label>
+        <textarea id="solucao" name="solucao"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="barra-acoes">
+    <a href="{{ url_for('crise.lista') }}" class="botao">Cancelar</a>
+    <button type="submit" class="botao botao-primario">Abrir crise</button>
+  </div>
+</form>
+{% endblock %}

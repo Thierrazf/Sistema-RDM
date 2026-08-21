@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ titulo }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<div style="display:grid; place-items:center; min-height:100vh; padding:24px;">
+  <div class="cartao" style="max-width:440px; width:100%; text-align:center;">
+    <div class="cartao-corpo" style="padding:36px 28px;">
+      <div class="mono silencioso" style="font-size:34px; letter-spacing:-1px;">{{ codigo }}</div>
+      <h1 style="font-size:19px; margin:8px 0 6px;">{{ titulo }}</h1>
+      <p class="silencioso pequeno">{{ texto }}</p>
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:18px;">
+        <a href="{{ url_for('painel.inicio') }}" class="botao botao-primario">Ir para o painel</a>
+        {% if codigo == 401 %}<a href="{{ url_for('auth.login') }}" class="botao">Entrar</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

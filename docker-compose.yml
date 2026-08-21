@@ -1,0 +1,44 @@
+services:
+
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      FLASK_ENV: production
+      DATABASE_URL: postgresql+psycopg://rdm:${POSTGRES_PASSWORD}@db:5432/rdm
+      RATELIMIT_STORAGE_URI: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      # Publique apenas no loopback e coloque nginx/IIS com HTTPS na frente.
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - pdfs:/app/instance/pdfs
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rdm
+      POSTGRES_USER: rdm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rdm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+volumes:
+  dados:
+  pdfs:

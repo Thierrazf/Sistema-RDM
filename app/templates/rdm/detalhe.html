@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+
+{% block titulo %}{{ rdm.identificador }} — {{ rdm.titulo }}{% endblock %}
+{% block sobretitulo %}{{ rdm.identificador }}{% endblock %}
+{% block cabecalho %}{{ rdm.titulo }}{% endblock %}
+
+{% block acoes %}
+  {% if pode_editar %}
+    <a href="{{ url_for('rdm.editar', rdm_id=rdm.id) }}" class="botao">Editar</a>
+  {% endif %}
+  <a href="{{ url_for('rdm.pdf', rdm_id=rdm.id) }}" class="botao" target="_blank" rel="noopener">PDF</a>
+  {% if current_user.pode_disparar_email %}
+    <a href="{{ url_for('rdm.preview_email', rdm_id=rdm.id) }}" class="botao">
+      {{ 'Reenviar abertura' if rdm.enviado_em else 'Enviar por e-mail' }}
+    </a>
+  {% endif %}
+  {% if current_user.is_gestor and not rdm.encerrada %}
+    <a href="{{ url_for('rdm.encerrar', rdm_id=rdm.id) }}" class="botao botao-primario">
+      Encerrar janela
+    </a>
+  {% elif current_user.pode_disparar_email and rdm.encerrada %}
+    <a href="{{ url_for('rdm.preview_email', rdm_id=rdm.id, tipo='encerramento') }}"
+       class="botao botao-sinal">
+      {{ 'Reenviar encerramento' if rdm.encerramento_enviado_em else 'Comunicar encerramento' }}
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block conteudo %}
+
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; align-items:center;">
+  {{ m.etiqueta_status(rdm.status) }}
+  {{ m.etiqueta_criticidade(rdm.criticidade) }}
+  {% if rdm.emergencial %}<span class="etiqueta etiqueta-vermelha">Emergencial</span>{% endif %}
+  {% if rdm.indisponibilidade %}<span class="etiqueta etiqueta-ambar">Com indisponibilidade</span>{% endif %}
+  {% if rdm.enviado_em %}
+    <span class="pequeno silencioso">comunicada em {{ rdm.enviado_em|dt }}</span>
+  {% else %}
+    <span class="pequeno silencioso">ainda não comunicada por e-mail</span>
+  {% endif %}
+</div>
+
+<!-- faixa da janela ------------------------------------------------- -->
+<div class="cartao">
+  <div class="cartao-topo">
+    <h2 class="cartao-titulo">Janela de manutenção</h2>
+    <span class="pequeno silencioso mono">{{ rdm.atividades|length }} atividades</span>
+  </div>
+  <div class="cartao-corpo">
+    {% if rdm.atividades %}
+      {{ m.faixa_janela(rdm) }}
+    {% else %}
+      <p class="silencioso" style="margin:0;">Nenhuma atividade registrada no plano de trabalho.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grade grade-2">
+
+  <!-- plano de trabalho -------------------------------------------- -->
+  <div>
+    <div class="cartao">
+      <div class="cartao-topo"><h2 class="cartao-titulo">Plano de trabalho por equipe</h2></div>
+
+      {% for equipe, atividades in grupos.items() %}
+      <div class="equipe-bloco" data-equipe="{{ equipe.slug }}" style="margin:14px 18px;">
+        <div class="equipe-topo">
+          <span class="equipe-nome">{{ equipe.value }}</span>
+          <span class="pequeno silencioso mono">{{ atividades|length }} atividade(s)</span>
+        </div>
+        {% for a in atividades %}
+        <div style="padding:12px 14px; border-bottom:1px solid #eef2f6;">
+          <div style="display:flex; gap:10px; align-items:baseline;">
+            <span class="mono silencioso pequeno">{{ '%02d'|format(a.ordem) }}</span>
+            <div style="flex:1; min-width:0;">
+              <div>{{ a.descricao }}</div>
+              <div class="pequeno silencioso" style="margin-top:3px;">
+                {{ a.nome_analista }} · {{ a.duracao_formatada }}
+                {%- if a.rollback %} · rollback: {{ a.rollback }}{% endif %}
+              </div>
+              {% if a.observacao %}
+              <div class="pequeno" style="margin-top:4px; color:var(--ambar);">{{ a.observacao }}</div>
+              {% endif %}
+            </div>
+            {{ m.etiqueta_atividade(a.status) }}
+          </div>
+
+          {% if rdm.status.name in ['APROVADA', 'EXECUTADA'] %}
+          <form method="post" style="display:flex; gap:6px; margin-top:8px;"
+                action="{{ url_for('rdm.status_atividade', rdm_id=rdm.id, atividade_id=a.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="status" style="width:auto; font-size:12.5px; padding:4px 8px;">
+              {% for s in status_atividade %}
+              <option value="{{ s.name }}" {{ 'selected' if a.status == s }}>{{ s.value }}</option>
+              {% endfor %}
+            </select>
+            <input type="text" name="observacao" value="{{ a.observacao or '' }}"
+                   placeholder="Observação da execução" style="font-size:12.5px; padding:4px 8px;">
+            <button type="submit" class="botao botao-mini">Registrar</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="vazio"><div class="vazio-titulo">Plano de trabalho vazio</div></div>
+      {% endfor %}
+    </div>
+
+    <div class="cartao">
+      <div class="cartao-topo"><h2 class="cartao-titulo">Contingência</h2></div>
+      <div class="cartao-corpo">
+        <div class="rotulo">Plano de rollback</div>
+        <p style="margin-top:0; white-space:pre-line;">{{ rdm.plano_rollback or '—' }}</p>
+        <div class="pequeno silencioso">
+          Tempo estimado de rollback:
+          {{ (rdm.tempo_rollback_min ~ ' min') if rdm.tempo_rollback_min else 'não informado' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- dados e histórico -------------------------------------------- -->
+  <div>
+    <div class="cartao">
+      <div class="cartao-topo"><h2 class="cartao-titulo">Dados da requisição</h2></div>
+      <div class="cartao-corpo">
+        <dl class="lista-definicao">
+          <dt>Número</dt><dd class="mono">{{ rdm.identificador }}</dd>
+          <dt>Solicitante</dt><dd>{{ rdm.solicitante.nome_completo if rdm.solicitante else '—' }}</dd>
+          <dt>Revisor técnico</dt><dd>{{ rdm.revisor.nome_completo if rdm.revisor else '—' }}</dd>
+          <dt>Sistema / módulo</dt>
+          <dd>{{ rdm.sistema or '—' }}{% if rdm.modulo %} · {{ rdm.modulo }}{% endif %}</dd>
+          <dt>Área de negócio</dt><dd>{{ rdm.negocio or '—' }}</dd>
+          <dt>Ambiente</dt><dd>{{ rdm.ambiente or '—' }}</dd>
+          <dt>Tipo de manutenção</dt><dd>{{ rdm.tipo_manutencao or '—' }}</dd>
+          <dt>Início previsto</dt><dd class="mono">{{ rdm.inicio_previsto|dt }}</dd>
+          <dt>Fim previsto</dt><dd class="mono">{{ rdm.fim_previsto|dt }}</dd>
+          <dt>Autorizado por</dt>
+          <dd>
+            {{ rdm.autorizado_por or '—' }}
+            {%- if rdm.autorizado_cargo %} — {{ rdm.autorizado_cargo }}{% endif %}
+            {% if rdm.departamento %}<div class="pequeno silencioso">{{ rdm.departamento }}</div>{% endif %}
+          </dd>
+          <dt>Criada em</dt><dd class="mono">{{ rdm.criado_em|dt }}</dd>
+        </dl>
+
+        <div style="margin-top:16px;">
+          <div class="rotulo">Objetivo</div>
+          <p class="pequeno" style="margin-top:0; white-space:pre-line;">{{ rdm.objetivo or '—' }}</p>
+
+          <div class="rotulo">Riscos identificados</div>
+          <p class="pequeno" style="margin-top:0; white-space:pre-line;">{{ rdm.riscos or '—' }}</p>
+
+          <div class="rotulo">Sistemas impactados</div>
+          <p class="pequeno" style="margin:0; white-space:pre-line;">{{ rdm.sistemas_impactados or '—' }}</p>
+        </div>
+      </div>
+    </div>
+
+    {% if current_user.is_gestor %}
+    <div class="cartao">
+      <div class="cartao-topo"><h2 class="cartao-titulo">Situação</h2></div>
+      <div class="cartao-corpo">
+        <form method="post" action="{{ url_for('rdm.alterar_status', rdm_id=rdm.id) }}"
+              style="display:flex; gap:8px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <select name="status">
+            {% for s in status_opcoes %}
+            <option value="{{ s.name }}" {{ 'selected' if rdm.status == s }}>{{ s.value }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="botao botao-primario">Alterar</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="cartao">
+      <div class="cartao-topo"><h2 class="cartao-titulo">Histórico</h2></div>
+      <div class="cartao-corpo">
+        <form method="post" action="{{ url_for('rdm.andamento', rdm_id=rdm.id) }}"
+              style="margin-bottom:16px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <textarea name="texto" rows="2" placeholder="Registrar andamento"></textarea>
+          <button type="submit" class="botao botao-mini" style="margin-top:8px;">Registrar</button>
+        </form>
+
+        {% for log in rdm.logs %}
+        <div class="registro">
+          <div class="registro-marca">{{ log.criado_em|dt('%d/%m/%y %H:%M') }}</div>
+          <div>
+            <div class="registro-texto">{{ log.descricao }}</div>
+            <div class="registro-autor">{{ log.usuario_nome }} · {{ log.acao|lower }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% if current_user.is_gestor %}
+<div class="cartao">
+  <div class="cartao-corpo" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
+    <div class="pequeno silencioso">
+      Excluir remove a RDM e todo o seu histórico. A ação não pode ser desfeita.
+    </div>
+    <form method="post" action="{{ url_for('rdm.excluir', rdm_id=rdm.id) }}"
+          onsubmit="return confirm('Excluir {{ rdm.identificador }} e todo o histórico?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="botao botao-perigo">Excluir RDM</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
