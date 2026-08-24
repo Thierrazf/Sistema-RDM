@@ -185,7 +185,7 @@ tela de pré-visualização — a alteração vale só para aquele disparo.
 
 ---
 
-## O que mudou em relação à versão anterior
+## Correções perante o desenvolvimento do projeto.
 
 - Corrigido o bug que impedia o cadastro de usuários novos e criava duplicados
 - Removida a rota `/seed-user`, que expunha um administrador com senha conhecida
