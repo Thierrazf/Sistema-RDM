@@ -217,20 +217,37 @@ def _registrar_comandos(app: Flask) -> None:
         autorizador, mas não acessam o sistema. Para dar acesso a alguma delas,
         edite em Administração > Usuários e defina uma senha.
         """
+        # (nome, cargo, e-mail, perfil, equipe)
+        # Cargo curto aparece antes do nome nos documentos ("Ten Cel Fulano").
+        # Para os analistas o cargo fica vazio: a equipe já identifica a área,
+        # e o título completo prefixando o nome ficaria ilegível no e-mail.
         pessoas = [
-            ("Carlos Mendes", "2º Ten", "carlos.mendes@exemplo.com.br", Perfil.GESTOR),
-            ("Roberto Alves", "Ten Cel", "roberto.alves@exemplo.com.br", Perfil.GESTOR),
+            ("Carlos Mendes", "2º Ten", "carlos.mendes@exemplo.com.br",
+             Perfil.GESTOR, None),
+            ("Roberto Alves", "Ten Cel", "roberto.alves@exemplo.com.br",
+             Perfil.GESTOR, None),
+            ("Paulo Ribeiro", "", "paulo.ribeiro@exemplo.com.br",
+             Perfil.ANALISTA, Equipe.INFRAESTRUTURA),
+            ("Marcos Teixeira", "", "marcos.teixeira@exemplo.com.br",
+             Perfil.ANALISTA, Equipe.INFRAESTRUTURA),
+            ("Bruno Lima", "", "bruno.lima@exemplo.com.br",
+             Perfil.ANALISTA, Equipe.BACKEND),
+            ("Ana Souza", "", "ana.souza@exemplo.com.br",
+             Perfil.ANALISTA, Equipe.FRONTEND),
+            ("João Pereira", "", "joao.pereira@exemplo.com.br",
+             Perfil.ANALISTA, Equipe.BANCO_DADOS),
         ]
         criados = 0
-        for nome, cargo, email, perfil in pessoas:
+        for nome, cargo, email, perfil, equipe in pessoas:
             if db.session.query(User).filter_by(email=email).first():
                 click.echo(f"já existe: {email}")
                 continue
             u = User(
                 nome=nome,
-                cargo=cargo,
+                cargo=cargo or None,
                 email=email,
                 perfil=perfil,
+                equipe=equipe,
                 ativo=True,
                 somente_referencia=True,
             )

@@ -83,3 +83,51 @@
   </div>
   {% endif %}
 {% endmacro %}
+
+{# ================================================================
+   Gráfico de colunas em SVG, desenhado no servidor: não depende de
+   JavaScript nem de como o navegador resolve altura dentro de flex.
+   `serie` é uma lista de pares (rótulo, valor).
+   ================================================================ #}
+{% macro grafico_colunas(serie, destaque=none) %}
+  {% set larg = 46 %}
+  {% set vao = 14 %}
+  {% set base = 158 %}
+  {% set teto = 122 %}
+  {% set total_larg = serie|length * larg + (serie|length - 1) * vao %}
+  {% set maximo = (serie | map(attribute=1) | max) or 1 %}
+
+  {# Cor em dois níveis: o atributo fill garante o desenho em qualquer
+     renderizador, e a classe permite que a folha de estilo sobreponha com
+     as variáveis do tema (regra de CSS vence atributo de apresentação). #}
+  <svg class="grafico-svg" viewBox="0 0 {{ total_larg }} 186"
+       preserveAspectRatio="xMidYMax meet" role="img"
+       aria-label="Gráfico de colunas">
+    <line class="eixo" stroke="#b6c1cd" stroke-width="1"
+          x1="0" y1="{{ base }}" x2="{{ total_larg }}" y2="{{ base }}"/>
+    {% for rotulo, valor in serie %}
+      {% set x = loop.index0 * (larg + vao) %}
+      {% set altura = ((valor / maximo) * teto) | round(1) if valor else 0 %}
+      {% set y = base - altura %}
+      {% if valor %}
+      {% set realcar = destaque and rotulo|string == destaque|string %}
+      <rect class="barra {{ 'destaque' if realcar }}" fill="{{ '#a85f06' if realcar else '#1f4a70' }}"
+            x="{{ x }}" y="{{ y }}" width="{{ larg }}" height="{{ altura }}" rx="2">
+        <title>{{ rotulo }}: {{ valor }} RDM(s)</title>
+      </rect>
+      {% else %}
+      <rect class="barra-zero" fill="#d3dae2"
+            x="{{ x }}" y="{{ base - 2 }}" width="{{ larg }}" height="2">
+        <title>{{ rotulo }}: nenhuma RDM</title>
+      </rect>
+      {% endif %}
+      <text x="{{ x + larg / 2 }}" y="{{ y - 7 }}" text-anchor="middle"
+            font-family="IBM Plex Mono, Consolas, monospace" font-size="15"
+            font-weight="{{ 400 if not valor else 600 }}"
+            class="valor {{ 'zero' if not valor }}" fill="{{ '#8a99a8' if not valor else '#0e1620' }}">{{ valor }}</text>
+      <text x="{{ x + larg / 2 }}" y="{{ base + 20 }}" text-anchor="middle"
+            font-family="IBM Plex Mono, Consolas, monospace" font-size="14"
+            class="rotulo" fill="#5b6c7f">{{ rotulo }}</text>
+    {% endfor %}
+  </svg>
+{% endmacro %}

@@ -24,6 +24,12 @@
          class="{{ 'ativo' if request.blueprint == 'rdm' }}">Requisições de mudança</a>
       <a href="{{ url_for('crise.lista') }}"
          class="{{ 'ativo' if request.blueprint == 'crise' }}">Crises</a>
+      <a href="{{ url_for('painel.indicadores') }}"
+         class="{{ 'ativo' if request.endpoint == 'painel.indicadores' }}">Indicadores</a>
+      <a href="{{ url_for('rdm.lista') }}"
+         class="{{ 'ativo' if request.blueprint == 'rdm' }}">Requisições de mudança</a>
+
+
 
       {% if current_user.is_admin %}
       <div class="nav-grupo">Administração</div>
