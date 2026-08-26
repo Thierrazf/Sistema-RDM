@@ -1,0 +1,38 @@
+{{ introducao }}
+{% if observacao %}
+{{ observacao }}
+{% endif %}
+================================================================
+{{ rdm.identificador }} - ENCERRAMENTO
+{{ rdm.titulo }}
+================================================================
+Resultado......: {{ rdm.resultado.value if rdm.resultado else 'Encerrada' }}
+Sistema........: {{ rdm.sistema or 'nao informado' }}{% if rdm.ambiente %} ({{ rdm.ambiente }}){% endif %}
+
+
+TEMPO DE EXECUCAO
+Inicio real....: {{ rdm.inicio_real.strftime('%d/%m/%Y %H:%M') if rdm.inicio_real else '-' }}
+Fim real.......: {{ rdm.fim_real.strftime('%d/%m/%Y %H:%M') if rdm.fim_real else '-' }}
+Horas usadas...: {{ rdm.duracao_real_formatada }}
+Previsto.......: {{ rdm.duracao_formatada }} ({{ rdm.desvio_formatado }})
+{% if rdm.rollback_acionado %}
+ATENCAO: o plano de rollback foi acionado. O ambiente foi restaurado
+a configuracao anterior a mudanca.
+{% endif %}
+RELATO DA EXECUCAO
+{{ rdm.relato_encerramento or '-' }}
+
+ATIVIDADES EXECUTADAS
+{% for equipe, atividades in grupos.items() %}
+-- {{ equipe.value }} --
+{% for a in atividades %}{{ '%02d'|format(a.ordem) }}. {{ a.descricao }}
+    {{ a.nome_analista }} | {{ a.status.value }}{% if a.observacao %}
+    Obs: {{ a.observacao }}{% endif %}
+{% endfor %}
+{% endfor %}
+Solicitante....: {{ rdm.solicitante.nome_completo if rdm.solicitante else '-' }}
+Encerrada por..: {{ rdm.encerrado_por.nome_completo if rdm.encerrado_por else '-' }}{% if rdm.encerrado_em %} em {{ rdm.encerrado_em.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+
+--
+{{ assinatura }}
+Mensagem gerada automaticamente pelo sistema de gestao de mudancas.

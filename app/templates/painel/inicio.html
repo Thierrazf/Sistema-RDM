@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+
+{% block titulo %}Painel — Gestão de Mudanças{% endblock %}
+{% block sobretitulo %}Visão geral{% endblock %}
+{% block cabecalho %}Painel{% endblock %}
+
+{% block acoes %}
+  <a href="{{ url_for('rdm.nova') }}" class="botao botao-primario">Nova RDM</a>
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="grade grade-4" style="margin-bottom:18px;">
+  <div class="indicador">
+    <div class="indicador-rotulo">Janelas em 14 dias</div>
+    <div class="indicador-valor">{{ proximas|length }}</div>
+    <div class="indicador-nota">agendadas e não encerradas</div>
+  </div>
+  <div class="indicador">
+    <div class="indicador-rotulo">Aguardando aprovação</div>
+    <div class="indicador-valor">
+      {{ (por_status.get(StatusRDM.ABERTA, 0) + por_status.get(StatusRDM.EM_ANALISE, 0)) }}
+    </div>
+    <div class="indicador-nota">abertas ou em análise</div>
+  </div>
+  <div class="indicador">
+    <div class="indicador-rotulo">RDMs registradas</div>
+    <div class="indicador-valor">{{ total_rdm }}</div>
+    <div class="indicador-nota">desde o início do uso</div>
+  </div>
+  <div class="indicador">
+    <div class="indicador-rotulo">Crises abertas</div>
+    <div class="indicador-valor" {% if crises_abertas %}style="color:var(--vermelho)"{% endif %}>
+      {{ crises_abertas }}
+    </div>
+    <div class="indicador-nota">
+      {% if crises_abertas %}<a href="{{ url_for('crise.lista') }}">acompanhar</a>{% else %}nenhuma em curso{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="cartao">
+  <div class="cartao-topo">
+    <h2 class="cartao-titulo">Próximas janelas</h2>
+    <a href="{{ url_for('rdm.lista') }}" class="pequeno">ver todas</a>
+  </div>
+
+  {% if proximas %}
+    <div class="cartao-corpo" style="display:grid; gap:20px;">
+      {% for r in proximas %}
+      <div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+          <a href="{{ url_for('rdm.detalhe', rdm_id=r.id) }}" class="mono">{{ r.identificador }}</a>
+          <strong>{{ r.titulo }}</strong>
+          {{ m.etiqueta_status(r.status) }}
+          {% if r.emergencial %}<span class="etiqueta etiqueta-vermelha">Emergencial</span>{% endif %}
+        </div>
+        {{ m.faixa_janela(r, legenda=false) }}
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="vazio">
+      <div class="vazio-titulo">Nenhuma janela agendada para os próximos 14 dias</div>
+      <p class="pequeno">Crie uma RDM para programar a próxima mudança.</p>
+      <a href="{{ url_for('rdm.nova') }}" class="botao botao-primario">Nova RDM</a>
+    </div>
+  {% endif %}
+</div>
+
+<div class="grade grade-2">
+  <div class="cartao">
+    <div class="cartao-topo"><h2 class="cartao-titulo">Atividades por equipe</h2></div>
+    <div class="cartao-corpo">
+      {% set maximo = carga_equipes.values()|max if carga_equipes else 0 %}
+      {% for equipe in equipes %}
+        {% set quantidade = carga_equipes.get(equipe, 0) %}
+        <div style="margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+            <span>{{ equipe.value }}</span>
+            <span class="mono silencioso">{{ quantidade }}</span>
+          </div>
+          <div style="height:8px; background:#eef2f6; border-radius:2px; overflow:hidden;">
+            <div style="height:100%; background:var(--eq-{{ equipe.slug }});
+                        width: {{ (quantidade / maximo * 100)|round if maximo else 0 }}%"></div>
+          </div>
+        </div>
+      {% endfor %}
+      <p class="pequeno silencioso" style="margin-bottom:0;">
+        Considera apenas RDMs em andamento.
+      </p>
+    </div>
+  </div>
+
+  <div class="cartao">
+    <div class="cartao-topo"><h2 class="cartao-titulo">Registradas recentemente</h2></div>
+    {% if recentes %}
+    <table class="tabela">
+      <tbody>
+        {% for r in recentes %}
+        <tr>
+          <td style="width:120px;">
+            <a href="{{ url_for('rdm.detalhe', rdm_id=r.id) }}" class="mono pequeno">{{ r.identificador }}</a>
+          </td>
+          <td>{{ r.titulo }}</td>
+          <td style="width:110px;">{{ m.etiqueta_status(r.status) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="vazio"><div class="vazio-titulo">Nada registrado ainda</div></div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

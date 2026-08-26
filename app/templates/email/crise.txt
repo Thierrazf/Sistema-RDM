@@ -1,0 +1,19 @@
+Prezados,
+
+Comunicamos a situacao abaixo, registrada pela equipe de TI.
+As atualizacoes seguirao por este mesmo canal ate o encerramento.
+
+{{ crise.identificador }} - {{ crise.titulo }}
+Situacao...: {{ crise.status }}
+Criticidade: {{ crise.criticidade.value }}
+Local......: {{ crise.local or '-' }}
+Aberta em..: {{ crise.criado_em.strftime('%d/%m/%Y %H:%M') }}
+
+PROBLEMA
+{{ crise.problema }}
+{% if crise.solucao %}
+SOLUCAO APLICADA
+{{ crise.solucao }}
+{% endif %}
+--
+Mensagem gerada automaticamente pelo sistema de gestao de crises.

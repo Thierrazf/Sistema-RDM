@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+
+{% block titulo %}Requisições de mudança{% endblock %}
+{% block sobretitulo %}Operação{% endblock %}
+{% block cabecalho %}Requisições de mudança{% endblock %}
+
+{% block acoes %}
+  <a href="{{ url_for('rdm.nova') }}" class="botao botao-primario">Nova RDM</a>
+{% endblock %}
+
+{% block conteudo %}
+
+<div class="cartao">
+  <div class="cartao-corpo" style="padding:14px 18px;">
+    <form method="get" class="filtros">
+      <div class="campo">
+        <label for="q">Buscar</label>
+        <input type="text" id="q" name="q" value="{{ busca }}"
+               placeholder="número, título ou sistema">
+      </div>
+      <div class="campo">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="">Todos</option>
+          {% for s in status_opcoes %}
+          <option value="{{ s.name }}" {{ 'selected' if status_atual == s.name }}>{{ s.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="botao">Filtrar</button>
+      {% if busca or status_atual %}
+        <a href="{{ url_for('rdm.lista') }}" class="botao">Limpar</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="cartao">
+  {% if paginacao.items %}
+  <table class="tabela">
+    <thead>
+      <tr>
+        <th style="width:130px;">Número</th>
+        <th>Título</th>
+        <th style="width:150px;">Janela</th>
+        <th style="width:80px;">Duração</th>
+        <th style="width:170px;">Equipes</th>
+        <th style="width:110px;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in paginacao.items %}
+      <tr>
+        <td>
+          <a href="{{ url_for('rdm.detalhe', rdm_id=r.id) }}" class="mono pequeno">{{ r.identificador }}</a>
+          {% if r.emergencial %}<div class="etiqueta etiqueta-vermelha" style="margin-top:4px;">Emergencial</div>{% endif %}
+        </td>
+        <td>
+          <div style="font-weight:500;">{{ r.titulo }}</div>
+          <div class="pequeno silencioso">
+            {{ r.sistema or 'Sistema não informado' }}
+            {%- if r.ambiente %} · {{ r.ambiente }}{% endif %}
+          </div>
+        </td>
+        <td class="mono pequeno">{{ r.inicio_previsto|dt('%d/%m/%Y %H:%M') }}</td>
+        <td class="mono pequeno">{{ r.duracao_formatada }}</td>
+        <td>
+          <div style="display:flex; gap:4px; flex-wrap:wrap;">
+            {% for equipe in r.equipes_envolvidas %}
+              <span class="legenda-cor" title="{{ equipe.value }}"
+                    style="width:12px; height:12px; background:var(--eq-{{ equipe.slug }})"></span>
+            {% endfor %}
+          </div>
+        </td>
+        <td>{{ m.etiqueta_status(r.status) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {{ m.paginacao(paginacao, 'rdm.lista', {'q': busca, 'status': status_atual}) }}
+  {% else %}
+  <div class="vazio">
+    <div class="vazio-titulo">Nenhuma RDM encontrada</div>
+    <p class="pequeno">
+      {% if busca or status_atual %}Ajuste os filtros ou limpe a busca.
+      {% else %}Registre a primeira requisição de mudança.{% endif %}
+    </p>
+    <a href="{{ url_for('rdm.nova') }}" class="botao botao-primario">Nova RDM</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "auth/base_acesso.html" %}
+{% block conteudo %}
+<h1>Entrar</h1>
+<p class="silencioso pequeno" style="margin-top:0;">Use seu e-mail corporativo.</p>
+
+<form method="post" action="{{ url_for('auth.login') }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="campo">
+    <label for="email">E-mail</label>
+    <input type="email" id="email" name="email" value="{{ email or '' }}"
+           autocomplete="username" required autofocus>
+  </div>
+
+  <div class="campo">
+    <label for="senha">Senha</label>
+    <input type="password" id="senha" name="senha" autocomplete="current-password" required>
+  </div>
+
+  <button type="submit" class="botao botao-primario" style="width:100%; justify-content:center;">
+    Entrar
+  </button>
+
+  <p class="pequeno" style="margin-top:14px;">
+    <a href="{{ url_for('auth.esqueci_senha') }}">Esqueci minha senha</a>
+  </p>
+</form>
+{% endblock %}

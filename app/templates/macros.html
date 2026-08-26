@@ -1,0 +1,85 @@
+{# ================================================================
+   Faixa da janela de manutenção — elemento assinatura do sistema.
+   Cada segmento é uma atividade: largura proporcional à duração,
+   cor da equipe responsável.
+   ================================================================ #}
+{% macro faixa_janela(rdm, legenda=true) %}
+  {% set total = rdm.duracao_prevista_min %}
+  <div class="janela">
+    <div class="janela-faixa" role="img"
+         aria-label="Distribuição da janela de {{ rdm.duracao_formatada }} entre as equipes">
+      {% for a in rdm.atividades %}
+        {% set largura = (a.duracao_min or 0) / total * 100 if total else 0 %}
+        {% if largura > 0 %}
+        <div class="janela-bloco" data-equipe="{{ a.equipe.slug }}"
+             style="width: {{ '%.2f'|format(largura) }}%"
+             title="{{ a.ordem }}. {{ a.descricao }} — {{ a.equipe.value }} · {{ a.nome_analista }} · {{ a.duracao_formatada }}">
+          {% if largura >= 7 %}{{ a.ordem }}{% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="janela-regua">
+      <span>{{ rdm.inicio_previsto|dt('%d/%m %H:%M') }}</span>
+      <span>duração somada das atividades: {{ rdm.duracao_formatada }}</span>
+      <span>{{ rdm.fim_previsto|dt('%d/%m %H:%M') }}</span>
+    </div>
+
+    {% if legenda and rdm.equipes_envolvidas %}
+    <div class="janela-legenda">
+      {% for equipe in rdm.equipes_envolvidas %}
+      <span class="legenda-item">
+        <span class="legenda-cor" style="background: var(--eq-{{ equipe.slug }})"></span>
+        {{ equipe.value }}
+      </span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+
+{% macro etiqueta_status(status) %}
+  {% set mapa = {
+    'RASCUNHO': 'neutra', 'ABERTA': 'azul', 'EM_ANALISE': 'ambar',
+    'APROVADA': 'verde', 'EXECUTADA': 'verde', 'CANCELADA': 'vermelha',
+    'FECHADA': 'neutra'
+  } %}
+  <span class="etiqueta etiqueta-{{ mapa.get(status.name, 'neutra') }}">{{ status.value }}</span>
+{% endmacro %}
+
+
+{% macro etiqueta_criticidade(nivel) %}
+  {% set mapa = {'BAIXA': 'neutra', 'MEDIA': 'azul', 'ALTA': 'ambar', 'CRITICA': 'vermelha'} %}
+  <span class="etiqueta etiqueta-{{ mapa.get(nivel.name, 'neutra') }}">{{ nivel.value }}</span>
+{% endmacro %}
+
+
+{% macro etiqueta_equipe(equipe) %}
+  <span class="etiqueta etiqueta-equipe" data-equipe="{{ equipe.slug }}">{{ equipe.value }}</span>
+{% endmacro %}
+
+
+{% macro etiqueta_atividade(status) %}
+  {% set mapa = {
+    'PENDENTE': 'neutra', 'EXECUTADA': 'verde',
+    'FALHOU': 'vermelha', 'NAO_APLICADA': 'neutra'
+  } %}
+  <span class="etiqueta etiqueta-{{ mapa.get(status.name, 'neutra') }}">{{ status.value }}</span>
+{% endmacro %}
+
+
+{% macro paginacao(pag, endpoint, filtros={}) %}
+  {% if pag.pages > 1 %}
+  <div class="paginacao">
+    {% if pag.has_prev %}
+      <a href="{{ url_for(endpoint, pagina=pag.prev_num, **filtros) }}">anterior</a>
+    {% endif %}
+    <span class="atual">{{ pag.page }} de {{ pag.pages }}</span>
+    {% if pag.has_next %}
+      <a href="{{ url_for(endpoint, pagina=pag.next_num, **filtros) }}">próxima</a>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endmacro %}

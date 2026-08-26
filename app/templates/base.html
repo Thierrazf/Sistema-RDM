@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Gestão de Mudanças{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% block cabeca %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="marca">
+      <div class="marca-sigla">TI</div>
+      <div class="marca-nome">Gestão de Mudanças</div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-grupo">Operação</div>
+      <a href="{{ url_for('painel.inicio') }}"
+         class="{{ 'ativo' if request.endpoint == 'painel.inicio' }}">Painel</a>
+      <a href="{{ url_for('rdm.lista') }}"
+         class="{{ 'ativo' if request.blueprint == 'rdm' }}">Requisições de mudança</a>
+      <a href="{{ url_for('crise.lista') }}"
+         class="{{ 'ativo' if request.blueprint == 'crise' }}">Crises</a>
+
+      {% if current_user.is_admin %}
+      <div class="nav-grupo">Administração</div>
+      <a href="{{ url_for('admin.usuarios') }}"
+         class="{{ 'ativo' if request.endpoint.startswith('admin.usuario') }}">Usuários</a>
+      <a href="{{ url_for('admin.catalogo') }}"
+         class="{{ 'ativo' if request.endpoint.startswith('admin.catalogo') }}">Catálogo de atividades</a>
+      <a href="{{ url_for('admin.auditoria') }}"
+         class="{{ 'ativo' if request.endpoint == 'admin.auditoria' }}">Trilha de acesso</a>
+      {% endif %}
+    </nav>
+
+    <div class="rodape-sidebar">
+      <div class="usuario-linha">
+        <div class="avatar" aria-hidden="true">{{ current_user.iniciais }}</div>
+        <div>
+          <div class="usuario-nome">{{ current_user.nome }}</div>
+          <div class="usuario-perfil">{{ current_user.perfil.value }}</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:12px;">
+        <a href="{{ url_for('auth.alterar_senha') }}">Alterar senha</a>
+        <a href="{{ url_for('auth.logout') }}">Sair</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="conteudo">
+    <header class="topo">
+      <div>
+        <div class="sobretitulo">{% block sobretitulo %}{% endblock %}</div>
+        <h1>{% block cabecalho %}{% endblock %}</h1>
+      </div>
+      <div class="topo-acoes">{% block acoes %}{% endblock %}</div>
+    </header>
+
+    <div class="pagina">
+      {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% if mensagens %}
+        <div class="avisos">
+          {% for categoria, texto in mensagens %}
+            <div class="aviso aviso-{{ categoria }}">{{ texto }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block conteudo %}{% endblock %}
+    </div>
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

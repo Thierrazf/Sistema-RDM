@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% set encerramento = tipo == 'encerramento' %}
+
+{% block titulo %}{{ 'Encerramento' if encerramento else 'Enviar' }} {{ rdm.identificador }}{% endblock %}
+{% block sobretitulo %}{{ rdm.identificador }}{% endblock %}
+{% block cabecalho %}
+  {{ 'Comunicar o encerramento' if encerramento else 'Comunicar por e-mail' }}
+{% endblock %}
+
+{% block acoes %}
+  <a href="{{ url_for('rdm.detalhe', rdm_id=rdm.id) }}" class="botao">Voltar para a RDM</a>
+{% endblock %}
+
+{% block conteudo %}
+
+{% if encerramento %}
+<div class="painel-encerramento" style="margin-bottom:18px; background:var(--branco);">
+  <div>
+    <div class="indicador-rotulo">Resultado</div>
+    <div style="font-weight:600; margin-top:4px;">
+      {{ rdm.resultado.value if rdm.resultado else '—' }}
+    </div>
+  </div>
+  <div>
+    <div class="indicador-rotulo">Horas utilizadas</div>
+    <div class="mono" style="font-weight:600; margin-top:4px;">{{ rdm.duracao_real_formatada }}</div>
+    <div class="pequeno silencioso">{{ rdm.desvio_formatado }}</div>
+  </div>
+  <div>
+    <div class="indicador-rotulo">Rollback</div>
+    <div style="font-weight:600; margin-top:4px;">
+      {{ 'Acionado' if rdm.rollback_acionado else 'Não foi necessário' }}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('rdm.enviar_email', rdm_id=rdm.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="tipo" value="{{ tipo }}">
+
+  <div class="grade grade-2">
+
+    <div>
+      <div class="cartao">
+        <div class="cartao-topo"><h2 class="cartao-titulo">Destinatários e texto</h2></div>
+        <div class="cartao-corpo">
+
+          <div class="campo">
+            <label for="destinatarios">Para</label>
+            <textarea id="destinatarios" name="destinatarios" rows="3" required>{{ destinatarios }}</textarea>
+            <div class="ajuda">
+              Separe por vírgula. Já vêm preenchidos os analistas das atividades,
+              o solicitante, o revisor e o autorizador. Endereços inválidos são descartados.
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="assunto-visual">Assunto</label>
+            <input type="text" id="assunto-visual" value="{{ assunto }}" disabled>
+          </div>
+
+          <div class="campo">
+            <label for="introducao">Texto de abertura</label>
+            <textarea id="introducao" name="introducao" rows="9">{{ introducao }}</textarea>
+            <div class="ajuda">
+              {% if encerramento %}
+                Texto padrão para o desfecho selecionado. Ajuste se este encerramento
+                exigir algo específico — a alteração vale apenas para este envio.
+              {% else %}
+                Texto padrão do setor. Ajuste se esta mudança exigir algo específico —
+                a alteração vale apenas para este envio.
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="observacao">Observação adicional (opcional)</label>
+            <textarea id="observacao" name="observacao" rows="3"
+                      placeholder="{{ 'Ex.: o time de atendimento pode reabrir os chamados relacionados.' if encerramento else 'Ex.: o acesso ao portal ficará indisponível das 22h às 23h.' }}">{{ observacao }}</textarea>
+          </div>
+
+          <div class="marcador">
+            <input type="checkbox" id="anexar_pdf" name="anexar_pdf" checked>
+            <label for="anexar_pdf">Anexar o PDF da RDM</label>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:20px;">
+            <button type="submit" class="botao botao-sinal">
+              {{ 'Enviar encerramento' if encerramento else 'Enviar comunicado' }}
+            </button>
+            <button type="submit" class="botao"
+                    formaction="{{ url_for('rdm.preview_email', rdm_id=rdm.id, tipo=tipo) }}">
+              Atualizar pré-visualização
+            </button>
+          </div>
+
+          {% set ja_enviado = rdm.encerramento_enviado_em if encerramento else rdm.enviado_em %}
+          {% if ja_enviado %}
+          <p class="pequeno silencioso" style="margin-bottom:0;">
+            Este comunicado já foi enviado em {{ ja_enviado|dt }}. Um novo envio será
+            registrado no histórico.
+          </p>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="cartao">
+        <div class="cartao-topo">
+          <h2 class="cartao-titulo">Pré-visualização</h2>
+          <span class="pequeno silencioso">exatamente como será recebido</span>
+        </div>
+        <div class="cartao-corpo">
+          <div class="moldura-email">
+            <iframe title="Pré-visualização do e-mail" srcdoc="{{ corpo_html|e }}"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</form>
+
+{% endblock %}

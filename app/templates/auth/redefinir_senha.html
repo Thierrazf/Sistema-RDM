@@ -1,0 +1,22 @@
+{% extends "auth/base_acesso.html" %}
+{% block conteudo %}
+<h1>Nova senha</h1>
+<p class="silencioso pequeno" style="margin-top:0;">
+  Mínimo de 10 caracteres, com maiúscula, minúscula, número e caractere especial.
+</p>
+
+<form method="post" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="campo">
+    <label for="senha">Nova senha</label>
+    <input type="password" id="senha" name="senha" autocomplete="new-password" required autofocus>
+  </div>
+  <div class="campo">
+    <label for="senha_confirma">Confirmar nova senha</label>
+    <input type="password" id="senha_confirma" name="senha_confirma" autocomplete="new-password" required>
+  </div>
+  <button type="submit" class="botao botao-primario" style="width:100%; justify-content:center;">
+    Salvar nova senha
+  </button>
+</form>
+{% endblock %}

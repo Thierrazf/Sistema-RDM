@@ -1,0 +1,9 @@
+{{ user.nome }},
+
+Recebemos um pedido para redefinir a senha da sua conta.
+O link abaixo vale por 30 minutos e so pode ser usado uma vez.
+
+{{ link }}
+
+Se voce nao fez esse pedido, ignore esta mensagem - sua senha atual
+continua valendo. Caso nao reconheca a solicitacao, avise a equipe de TI.

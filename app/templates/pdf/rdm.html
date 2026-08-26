@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>{{ rdm.identificador }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 14mm 18mm;
+    @bottom-center {
+      content: "{{ rdm.identificador }} · página " counter(page) " de " counter(pages);
+      font-family: monospace; font-size: 8pt; color: #5b6c7f;
+    }
+  }
+  body { font-family: "Helvetica", Arial, sans-serif; font-size: 9.5pt; color: #0e1620; line-height: 1.45; }
+  h1 { font-size: 15pt; margin: 0 0 2mm; }
+  .sobre { font-family: monospace; font-size: 8pt; letter-spacing: 1.4px;
+           text-transform: uppercase; color: #a85f06; }
+  .cabecalho { border-bottom: 2pt solid #0c2439; padding-bottom: 4mm; margin-bottom: 5mm; }
+  .subtitulo { color: #5b6c7f; font-size: 9pt; }
+  .secao { font-family: monospace; font-size: 8pt; letter-spacing: 1.2px;
+           text-transform: uppercase; color: #5b6c7f;
+           border-bottom: 0.5pt solid #d3dae2; padding-bottom: 1.5mm; margin: 6mm 0 3mm; }
+  table { width: 100%; border-collapse: collapse; }
+  .dados td { padding: 1.6mm 2mm; border-bottom: 0.4pt solid #eef2f6; vertical-align: top; }
+  .dados td.rot { width: 34mm; color: #5b6c7f; }
+  .equipe { border: 0.5pt solid #d3dae2; border-left: 1.6pt solid #5b6c7f; margin-bottom: 3mm;
+            break-inside: avoid; }
+  .equipe.infraestrutura { border-left-color: #2f6b8f; }
+  .equipe.frontend { border-left-color: #a85f06; }
+  .equipe.backend { border-left-color: #14685a; }
+  .equipe.banco-dados { border-left-color: #6d3a72; }
+  .equipe-nome { background: #f5f8fa; padding: 2mm 3mm; font-weight: bold;
+                 border-bottom: 0.5pt solid #d3dae2; }
+  .atv td { padding: 2mm 3mm; border-bottom: 0.4pt solid #eef2f6; vertical-align: top; }
+  .atv td.num { width: 8mm; font-family: monospace; color: #8a99a8; }
+  .atv td.resp { width: 44mm; font-size: 8.5pt; color: #5b6c7f; }
+  .caixa { border: 0.5pt solid #d3dae2; padding: 3mm; white-space: pre-line; }
+  .alerta { background: #f8e3e1; border: 0.5pt solid #edc7c4; color: #7d1c1a;
+            padding: 2.5mm 3mm; margin-bottom: 4mm; }
+  .faixa { display: flex; height: 7mm; border: 0.5pt solid #b6c1cd; margin-bottom: 2mm; }
+  .faixa div { color: #fff; font-family: monospace; font-size: 7.5pt; text-align: center;
+               line-height: 7mm; }
+  .assinaturas { margin-top: 12mm; width: 100%; }
+  .assinaturas td { padding-top: 12mm; border-top: 0; text-align: center; font-size: 8.5pt;
+                    color: #5b6c7f; width: 33%; }
+  .assinaturas .linha { border-top: 0.6pt solid #0e1620; padding-top: 1.5mm; margin: 0 4mm; }
+</style>
+</head>
+<body>
+
+<div class="cabecalho">
+  <div class="sobre">Requisição de Mudança · {{ rdm.identificador }}</div>
+  <h1>{{ rdm.titulo }}</h1>
+  <div class="subtitulo">
+    {{ rdm.sistema or 'Sistema não informado' }}
+    {%- if rdm.modulo %} · {{ rdm.modulo }}{% endif %}
+    {%- if rdm.ambiente %} · {{ rdm.ambiente }}{% endif %}
+    · Situação: {{ rdm.status.value }}
+  </div>
+</div>
+
+{% if rdm.emergencial or rdm.indisponibilidade %}
+<div class="alerta">
+  {% if rdm.emergencial %}Mudança emergencial — executada fora do fluxo ordinário de aprovação.{% endif %}
+  {% if rdm.emergencial and rdm.indisponibilidade %}<br>{% endif %}
+  {% if rdm.indisponibilidade %}Haverá indisponibilidade de serviço durante a janela.{% endif %}
+</div>
+{% endif %}
+
+<div class="secao">Identificação</div>
+<table class="dados">
+  <tr><td class="rot">Solicitante</td><td>{{ rdm.solicitante.nome_completo if rdm.solicitante else '—' }}</td>
+      <td class="rot">Revisor técnico</td><td>{{ rdm.revisor.nome_completo if rdm.revisor else '—' }}</td></tr>
+  <tr><td class="rot">Área de negócio</td><td>{{ rdm.negocio or '—' }}</td>
+      <td class="rot">Tipo</td><td>{{ rdm.tipo_manutencao or '—' }}</td></tr>
+  <tr><td class="rot">Criticidade</td><td>{{ rdm.criticidade.value }}</td>
+      <td class="rot">Emitido em</td><td>{{ emitido_em }}</td></tr>
+</table>
+
+<div class="secao">Janela de manutenção</div>
+{% set total = rdm.duracao_prevista_min %}
+{% if total %}
+{% set cores = {'INFRAESTRUTURA':'#2f6b8f','FRONTEND':'#a85f06','BACKEND':'#14685a','BANCO_DADOS':'#6d3a72'} %}
+<div class="faixa">
+  {% for a in rdm.atividades %}
+    {% set largura = (a.duracao_min or 0) / total * 100 %}
+    {% if largura > 0 %}
+    <div style="width:{{ '%.2f'|format(largura) }}%; background:{{ cores.get(a.equipe.name, '#5b6c7f') }};">
+      {%- if largura >= 7 %}{{ a.ordem }}{% endif -%}
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+<table class="dados">
+  <tr><td class="rot">Início previsto</td>
+      <td>{{ rdm.inicio_previsto.strftime('%d/%m/%Y %H:%M') if rdm.inicio_previsto else 'a definir' }}</td>
+      <td class="rot">Fim previsto</td>
+      <td>{{ rdm.fim_previsto.strftime('%d/%m/%Y %H:%M') if rdm.fim_previsto else 'a definir' }}</td></tr>
+  <tr><td class="rot">Duração somada</td><td>{{ rdm.duracao_formatada }}</td>
+      <td class="rot">Equipes</td>
+      <td>{{ rdm.equipes_envolvidas | map(attribute='value') | join(', ') or '—' }}</td></tr>
+</table>
+{% if rdm.motivo %}
+<p style="margin:3mm 0 0;"><strong>Motivo da janela:</strong> {{ rdm.motivo }}</p>
+{% endif %}
+
+<div class="secao">Objetivo e impacto</div>
+<table class="dados">
+  <tr><td class="rot">Objetivo</td><td>{{ rdm.objetivo or '—' }}</td></tr>
+  <tr><td class="rot">Ativos envolvidos</td><td>{{ rdm.ativos_envolvidos or '—' }}</td></tr>
+  <tr><td class="rot">Sistemas impactados</td><td>{{ rdm.sistemas_impactados or '—' }}</td></tr>
+  <tr><td class="rot">Riscos identificados</td><td>{{ rdm.riscos or '—' }}</td></tr>
+</table>
+
+<div class="secao">Plano de trabalho por equipe</div>
+{% for equipe, atividades in grupos.items() %}
+<div class="equipe {{ equipe.slug }}">
+  <div class="equipe-nome">{{ equipe.value }}</div>
+  <table class="atv">
+    {% for a in atividades %}
+    <tr>
+      <td class="num">{{ '%02d'|format(a.ordem) }}</td>
+      <td>
+        {{ a.descricao }}
+        {% if a.rollback %}<div style="color:#5b6c7f; font-size:8.5pt;">Rollback: {{ a.rollback }}</div>{% endif %}
+        {% if a.observacao %}<div style="color:#a85f06; font-size:8.5pt;">{{ a.observacao }}</div>{% endif %}
+      </td>
+      <td class="resp">{{ a.nome_analista }}<br>{{ a.duracao_formatada }} · {{ a.status.value }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<p class="subtitulo">Nenhuma atividade registrada.</p>
+{% endfor %}
+
+<div class="secao">Plano de rollback</div>
+<div class="caixa">{{ rdm.plano_rollback or 'Não informado.' }}</div>
+{% if rdm.tempo_rollback_min %}
+<p style="margin:2mm 0 0; font-size:8.5pt; color:#5b6c7f;">
+  Tempo estimado de retorno: {{ rdm.tempo_rollback_min }} minutos.
+</p>
+{% endif %}
+
+{% if rdm.encerrada %}
+<div class="secao">Encerramento da janela</div>
+<table class="dados">
+  <tr><td class="rot">Resultado</td><td><strong>{{ rdm.resultado.value }}</strong></td>
+      <td class="rot">Rollback</td>
+      <td>{{ 'Acionado' if rdm.rollback_acionado else 'Não foi necessário' }}</td></tr>
+  <tr><td class="rot">Início real</td>
+      <td>{{ rdm.inicio_real.strftime('%d/%m/%Y %H:%M') if rdm.inicio_real else '—' }}</td>
+      <td class="rot">Fim real</td>
+      <td>{{ rdm.fim_real.strftime('%d/%m/%Y %H:%M') if rdm.fim_real else '—' }}</td></tr>
+  <tr><td class="rot">Horas utilizadas</td><td>{{ rdm.duracao_real_formatada }}</td>
+      <td class="rot">Comparado ao previsto</td><td>{{ rdm.desvio_formatado }}</td></tr>
+  <tr><td class="rot">Encerrada por</td>
+      <td colspan="3">
+        {{ rdm.encerrado_por.nome_completo if rdm.encerrado_por else '—' }}
+        {%- if rdm.encerrado_em %} em {{ rdm.encerrado_em.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+      </td></tr>
+</table>
+<div class="caixa" style="margin-top:3mm;">{{ rdm.relato_encerramento or '—' }}</div>
+{% endif %}
+
+<div class="secao">Autorização</div>
+<table class="dados">
+  <tr><td class="rot">Autorizado por</td><td>{{ rdm.autorizado_por or '—' }}</td>
+      <td class="rot">Cargo</td><td>{{ rdm.autorizado_cargo or '—' }}</td></tr>
+  <tr><td class="rot">Departamento</td><td>{{ rdm.departamento or '—' }}</td>
+      <td class="rot">Contato</td>
+      <td>{{ rdm.autorizado_email or '—' }}{% if rdm.autorizado_telefone %} · {{ rdm.autorizado_telefone }}{% endif %}</td></tr>
+</table>
+
+<table class="assinaturas">
+  <tr>
+    <td><div class="linha">Solicitante<br>{{ rdm.solicitante.nome_completo if rdm.solicitante else '' }}</div></td>
+    <td><div class="linha">Revisor técnico<br>{{ rdm.revisor.nome_completo if rdm.revisor else '' }}</div></td>
+    <td><div class="linha">Autorizador<br>{{ rdm.autorizado_por or '' }}</div></td>
+  </tr>
+</table>
+
+</body>
+</html>

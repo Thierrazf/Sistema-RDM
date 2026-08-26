@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Acesso — Gestão de Mudanças{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<div class="tela-acesso">
+
+  <section class="acesso-lateral">
+    <div>
+      <div class="marca-sigla" style="margin-bottom:26px;">TI</div>
+      <div class="acesso-faixa" aria-hidden="true">
+        <span style="background:var(--eq-infraestrutura)"></span>
+        <span style="background:var(--eq-frontend)"></span>
+        <span style="background:var(--eq-backend)"></span>
+        <span style="background:var(--eq-banco-dados)"></span>
+      </div>
+      <h2>Toda mudança tem janela, dono e plano de volta.</h2>
+      <p>
+        Requisições de mudança preenchidas, aprovadas e comunicadas em um só
+        lugar — com o plano de trabalho dividido entre infraestrutura,
+        front-end, back-end e banco de dados.
+      </p>
+    </div>
+    <p class="pequeno" style="color:#7b90a6; margin:0;">
+      Acesso restrito a contas corporativas. Os acessos são registrados.
+    </p>
+  </section>
+
+  <section class="acesso-form">
+    <div class="acesso-caixa">
+      {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% if mensagens %}
+        <div class="avisos">
+          {% for categoria, texto in mensagens %}
+            <div class="aviso aviso-{{ categoria }}">{{ texto }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+      {% block conteudo %}{% endblock %}
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

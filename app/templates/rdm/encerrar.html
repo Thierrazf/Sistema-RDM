@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+
+{% block titulo %}Encerrar {{ rdm.identificador }}{% endblock %}
+{% block sobretitulo %}{{ rdm.identificador }}{% endblock %}
+{% block cabecalho %}Encerrar a janela{% endblock %}
+
+{% block acoes %}
+  <a href="{{ url_for('rdm.detalhe', rdm_id=rdm.id) }}" class="botao">Voltar para a RDM</a>
+{% endblock %}
+
+{% block conteudo %}
+
+<form method="post" id="form-encerrar">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="cartao">
+    <div class="cartao-topo">
+      <h2 class="cartao-titulo">Desfecho da janela</h2>
+      <span class="pequeno silencioso mono">previsto: {{ rdm.duracao_formatada }}</span>
+    </div>
+    <div class="cartao-corpo">
+
+      <div class="campo">
+        <span class="rotulo">Resultado *</span>
+        <div class="grade grade-2" style="gap:10px;">
+          {% for r in resultados %}
+          <label class="opcao-resultado" data-resultado="{{ r.slug }}">
+            <input type="radio" name="resultado" value="{{ r.name }}" required
+                   {{ 'checked' if rdm.resultado == r }}>
+            <span>
+              <strong>{{ r.value }}</strong>
+              <span class="pequeno silencioso">
+                {% if r.name == 'SUCESSO' %}Tudo executado, serviços validados, sem rollback.
+                {% elif r.name == 'SUCESSO_RESSALVA' %}Executado, mas com pendências a tratar.
+                {% elif r.name == 'ROLLBACK' %}Falhou; ambiente restaurado ao estado anterior.
+                {% else %}A janela não chegou a ser executada.{% endif %}
+              </span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="linha-campos linha-3">
+        <div class="campo">
+          <label for="inicio_real">Início real *</label>
+          <input type="datetime-local" id="inicio_real" name="inicio_real" required
+                 value="{{ (rdm.inicio_real or rdm.inicio_previsto).strftime('%Y-%m-%dT%H:%M') if (rdm.inicio_real or rdm.inicio_previsto) else '' }}">
+        </div>
+        <div class="campo">
+          <label for="fim_real">Fim real *</label>
+          <input type="datetime-local" id="fim_real" name="fim_real" required
+                 value="{{ rdm.fim_real.strftime('%Y-%m-%dT%H:%M') if rdm.fim_real else '' }}">
+        </div>
+        <div class="campo">
+          <span class="rotulo">Tempo utilizado</span>
+          <div class="mono" id="tempo-real"
+               style="padding:8px 10px; border:1px solid var(--linha); border-radius:var(--raio);
+                      background:#f7f9fb;">—</div>
+          <div class="ajuda" id="desvio-real">Comparado com a soma das atividades.</div>
+        </div>
+      </div>
+
+      <div class="marcador" style="margin-bottom:16px;">
+        <input type="checkbox" id="rollback_acionado" name="rollback_acionado"
+               {{ 'checked' if rdm.rollback_acionado }}>
+        <label for="rollback_acionado">O plano de rollback foi acionado durante a janela</label>
+      </div>
+
+      <div class="campo">
+        <label for="relato_encerramento">Relato do que aconteceu *</label>
+        <textarea id="relato_encerramento" name="relato_encerramento" rows="5" required
+                  placeholder="O que foi executado, o que saiu do previsto, o que ficou pendente. Este texto vai no comunicado e no PDF.">{{ rdm.relato_encerramento or '' }}</textarea>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="cartao">
+    <div class="cartao-topo">
+      <h2 class="cartao-titulo">Como cada atividade terminou</h2>
+      <span class="pequeno silencioso">o resultado por equipe vai no comunicado</span>
+    </div>
+    <div class="cartao-corpo">
+      {% for equipe, atividades in rdm.atividades_por_equipe().items() %}
+      <div class="equipe-bloco" data-equipe="{{ equipe.slug }}">
+        <div class="equipe-topo">
+          <span class="equipe-nome">{{ equipe.value }}</span>
+        </div>
+        {% for a in atividades %}
+        <div style="padding:12px 14px; border-bottom:1px solid #eef2f6;">
+          <div style="display:flex; gap:10px; align-items:baseline; margin-bottom:8px;">
+            <span class="mono silencioso pequeno">{{ '%02d'|format(a.ordem) }}</span>
+            <div style="flex:1; min-width:0;">
+              <div>{{ a.descricao }}</div>
+              <div class="pequeno silencioso">{{ a.nome_analista }} · previsto {{ a.duracao_formatada }}</div>
+            </div>
+          </div>
+          <div class="linha-campos linha-2">
+            <select name="atividade_{{ a.id }}" aria-label="Status da atividade {{ a.ordem }}">
+              {% for s in status_atividade %}
+              <option value="{{ s.name }}" {{ 'selected' if a.status == s }}>{{ s.value }}</option>
+              {% endfor %}
+            </select>
+            <input type="text" name="observacao_{{ a.id }}" value="{{ a.observacao or '' }}"
+                   placeholder="Observação (opcional)">
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="barra-acoes">
+      <a href="{{ url_for('rdm.detalhe', rdm_id=rdm.id) }}" class="botao">Cancelar</a>
+      <button type="submit" class="botao botao-primario">
+        Registrar encerramento e revisar comunicado
+      </button>
+    </div>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/rdm_encerrar.js') }}"
+        data-previsto="{{ rdm.duracao_prevista_min }}"></script>
+{% endblock %}

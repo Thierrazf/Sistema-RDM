@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Trilha de acesso{% endblock %}
+{% block sobretitulo %}Administração{% endblock %}
+{% block cabecalho %}Trilha de acesso{% endblock %}
+{% block conteudo %}
+<div class="cartao">
+  <div class="cartao-topo">
+    <h2 class="cartao-titulo">Eventos de autenticação</h2>
+    <span class="pequeno silencioso">registro exigível em auditoria</span>
+  </div>
+  {% if paginacao.items %}
+  <table class="tabela">
+    <thead>
+      <tr><th style="width:150px;">Quando</th><th style="width:160px;">Evento</th>
+          <th>Conta</th><th style="width:140px;">Origem</th><th>Detalhe</th></tr>
+    </thead>
+    <tbody>
+      {% for log in paginacao.items %}
+      <tr>
+        <td class="mono pequeno">{{ log.criado_em|dt('%d/%m/%y %H:%M:%S') }}</td>
+        <td>
+          <span class="etiqueta etiqueta-{{ 'verde' if log.evento == 'LOGIN_OK' else ('vermelha' if 'FALHA' in log.evento or 'BLOQUEADO' in log.evento else 'neutra') }}">
+            {{ log.evento }}
+          </span>
+        </td>
+        <td class="pequeno mono">{{ log.email or '—' }}</td>
+        <td class="pequeno mono">{{ log.ip or '—' }}</td>
+        <td class="pequeno silencioso">{{ log.detalhe or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {{ m.paginacao(paginacao, 'admin.auditoria') }}
+  {% else %}
+  <div class="vazio"><div class="vazio-titulo">Nenhum evento registrado ainda</div></div>
+  {% endif %}
+</div>
+{% endblock %}

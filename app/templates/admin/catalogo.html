@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block titulo %}Catálogo de atividades{% endblock %}
+{% block sobretitulo %}Administração{% endblock %}
+{% block cabecalho %}Catálogo de atividades{% endblock %}
+{% block conteudo %}
+
+<div class="cartao">
+  <div class="cartao-topo"><h2 class="cartao-titulo">Adicionar atividade recorrente</h2></div>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="cartao-corpo">
+      <p class="pequeno silencioso" style="margin-top:0;">
+        Atividades cadastradas aqui aparecem no seletor do plano de trabalho,
+        para não redigitar o que se repete a cada janela.
+      </p>
+      <div class="linha-campos linha-2">
+        <div class="campo">
+          <label for="equipe">Equipe</label>
+          <select id="equipe" name="equipe" required>
+            {% for e in equipes %}<option value="{{ e.name }}">{{ e.value }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="duracao_min">Duração padrão (min)</label>
+          <input type="number" id="duracao_min" name="duracao_min" min="0" step="5" value="30">
+        </div>
+      </div>
+      <div class="campo">
+        <label for="descricao">Descrição</label>
+        <input type="text" id="descricao" name="descricao" required maxlength="300">
+      </div>
+      <div class="campo">
+        <label for="rollback">Rollback padrão (opcional)</label>
+        <input type="text" id="rollback" name="rollback" maxlength="300">
+      </div>
+      <button type="submit" class="botao botao-primario">Adicionar</button>
+    </div>
+  </form>
+</div>
+
+<div class="cartao">
+  <div class="cartao-topo"><h2 class="cartao-titulo">Atividades cadastradas</h2></div>
+  {% if itens %}
+  <table class="tabela">
+    <thead>
+      <tr><th style="width:190px;">Equipe</th><th>Descrição</th>
+          <th style="width:90px;">Duração</th><th class="col-acoes" style="width:90px;"></th></tr>
+    </thead>
+    <tbody>
+      {% for item in itens %}
+      <tr>
+        <td>{{ m.etiqueta_equipe(item.equipe) }}</td>
+        <td>
+          {{ item.descricao }}
+          {% if item.rollback %}<div class="pequeno silencioso">Rollback: {{ item.rollback }}</div>{% endif %}
+        </td>
+        <td class="mono pequeno">{{ item.duracao_min }} min</td>
+        <td class="col-acoes">
+          <form method="post" action="{{ url_for('admin.catalogo_remover', item_id=item.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="botao botao-mini botao-perigo">Remover</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="vazio">
+    <div class="vazio-titulo">Catálogo vazio</div>
+    <p class="pequeno">Rode <code class="mono">flask carregar-catalogo</code> para popular com as atividades padrão das quatro equipes.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

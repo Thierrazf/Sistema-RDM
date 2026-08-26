@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ 'Nova RDM' if modo == 'nova' else 'Editar ' ~ rdm.identificador }}{% endblock %}
+{% block sobretitulo %}Requisição de mudança{% endblock %}
+{% block cabecalho %}
+  {{ 'Nova requisição' if modo == 'nova' else 'Editar ' ~ rdm.identificador }}
+{% endblock %}
+
+{% block conteudo %}
+{% set acao = url_for('rdm.nova') if modo == 'nova' else url_for('rdm.editar', rdm_id=rdm.id) %}
+
+<form method="post" action="{{ acao }}" id="form-rdm" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="cartao" style="padding:0;">
+
+    <div class="etapas" role="tablist">
+      <button type="button" class="etapa-aba" role="tab" aria-selected="true" data-etapa="1">
+        <span class="numero">Etapa 1</span><span class="nome">Identificação</span>
+      </button>
+      <button type="button" class="etapa-aba" role="tab" aria-selected="false" data-etapa="2">
+        <span class="numero">Etapa 2</span><span class="nome">Impacto e risco</span>
+      </button>
+      <button type="button" class="etapa-aba" role="tab" aria-selected="false" data-etapa="3">
+        <span class="numero">Etapa 3</span><span class="nome">Janela e plano de trabalho</span>
+      </button>
+      <button type="button" class="etapa-aba" role="tab" aria-selected="false" data-etapa="4">
+        <span class="numero">Etapa 4</span><span class="nome">Autorização</span>
+      </button>
+    </div>
+
+    <!-- ETAPA 1 ------------------------------------------------------- -->
+    <section class="etapa-painel" data-painel="1">
+      <div class="campo">
+        <label for="titulo">Título da mudança *</label>
+        <input type="text" id="titulo" name="titulo" required maxlength="200"
+               value="{{ rdm.titulo if rdm else '' }}"
+               placeholder="Ex.: Atualização da versão 4.2 do portal do beneficiário">
+      </div>
+
+      <div class="linha-campos linha-2">
+        <div class="campo">
+          <label for="sistema">Sistema</label>
+          <input type="text" id="sistema" name="sistema" value="{{ rdm.sistema if rdm else '' }}">
+        </div>
+        <div class="campo">
+          <label for="modulo">Módulo</label>
+          <input type="text" id="modulo" name="modulo" value="{{ rdm.modulo if rdm else '' }}">
+        </div>
+      </div>
+
+      <div class="linha-campos linha-3">
+        <div class="campo">
+          <label for="negocio">Área de negócio</label>
+          <input type="text" id="negocio" name="negocio" value="{{ rdm.negocio if rdm else '' }}">
+        </div>
+        <div class="campo">
+          <label for="ambiente">Ambiente</label>
+          <select id="ambiente" name="ambiente">
+            {% for opcao in ['Produção', 'Homologação', 'Desenvolvimento', 'Contingência'] %}
+            <option value="{{ opcao }}" {{ 'selected' if rdm and rdm.ambiente == opcao }}>{{ opcao }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="revisor_id">Revisor técnico</label>
+          <select id="revisor_id" name="revisor_id">
+            <option value="">Não definido</option>
+            {% for u in usuarios %}
+            <option value="{{ u.id }}" {{ 'selected' if rdm and rdm.revisor_id == u.id }}>{{ u.nome_completo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="linha-campos linha-2">
+        <div class="campo">
+          <label for="solicitante_id">Solicitante *</label>
+          <select id="solicitante_id" name="solicitante_id" required>
+            {% set atual = rdm.solicitante_id if rdm else current_user.id %}
+            {% for u in usuarios %}
+            <option value="{{ u.id }}" {{ 'selected' if atual == u.id }}>{{ u.nome_completo }}</option>
+            {% endfor %}
+          </select>
+          <div class="ajuda">Quem está solicitando a mudança.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 2 ------------------------------------------------------- -->
+    <section class="etapa-painel" data-painel="2" hidden>
+      <div class="campo">
+        <label for="objetivo">Objetivo da mudança *</label>
+        <textarea id="objetivo" name="objetivo" required
+                  placeholder="O que essa mudança entrega e por que precisa ser feita.">{{ rdm.objetivo if rdm else '' }}</textarea>
+      </div>
+
+      <div class="linha-campos linha-2">
+        <div class="campo">
+          <label for="ativos_envolvidos">Ativos envolvidos</label>
+          <textarea id="ativos_envolvidos" name="ativos_envolvidos"
+                    placeholder="Servidores, bancos, appliances, links.">{{ rdm.ativos_envolvidos if rdm else '' }}</textarea>
+        </div>
+        <div class="campo">
+          <label for="sistemas_impactados">Sistemas impactados</label>
+          <textarea id="sistemas_impactados" name="sistemas_impactados"
+                    placeholder="Sistemas que podem sentir efeito, mesmo indireto.">{{ rdm.sistemas_impactados if rdm else '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="riscos">Riscos identificados</label>
+        <textarea id="riscos" name="riscos"
+                  placeholder="O que pode dar errado e qual o efeito para o usuário final.">{{ rdm.riscos if rdm else '' }}</textarea>
+      </div>
+
+      <div class="linha-campos linha-2">
+        <div class="campo">
+          <label for="criticidade">Criticidade</label>
+          <select id="criticidade" name="criticidade">
+            {% for c in criticidades %}
+            <option value="{{ c.name }}"
+              {{ 'selected' if (rdm and rdm.criticidade == c) or (not rdm and c.name == 'MEDIA') }}>{{ c.value }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo" style="display:flex; align-items:flex-end;">
+          <div class="marcador">
+            <input type="checkbox" id="indisponibilidade" name="indisponibilidade"
+                   {{ 'checked' if rdm and rdm.indisponibilidade }}>
+            <label for="indisponibilidade">Haverá indisponibilidade de serviço durante a janela</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 3 ------------------------------------------------------- -->
+    <section class="etapa-painel" data-painel="3" hidden>
+      <div class="linha-campos linha-3">
+        <div class="campo">
+          <label for="tipo_manutencao">Tipo de manutenção</label>
+          <select id="tipo_manutencao" name="tipo_manutencao">
+            {% for opcao in ['Programada', 'Emergencial', 'Corretiva', 'Preventiva', 'Evolutiva'] %}
+            <option value="{{ opcao }}" {{ 'selected' if rdm and rdm.tipo_manutencao == opcao }}>{{ opcao }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="campo">
+          <label for="inicio_previsto">Início da janela</label>
+          <input type="datetime-local" id="inicio_previsto" name="inicio_previsto"
+                 value="{{ rdm.inicio_previsto.strftime('%Y-%m-%dT%H:%M') if rdm and rdm.inicio_previsto else '' }}">
+        </div>
+        <div class="campo">
+          <label for="fim_previsto">Fim da janela</label>
+          <input type="datetime-local" id="fim_previsto" name="fim_previsto"
+                 value="{{ rdm.fim_previsto.strftime('%Y-%m-%dT%H:%M') if rdm and rdm.fim_previsto else '' }}">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="motivo">Motivo da janela escolhida</label>
+        <textarea id="motivo" name="motivo"
+                  placeholder="Por que este horário — menor uso, dependência de terceiro, prazo regulatório.">{{ rdm.motivo if rdm else '' }}</textarea>
+      </div>
+
+      <hr style="border:0; border-top:1px solid var(--linha); margin:24px 0;">
+
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+        <span class="rotulo" style="margin:0;">Plano de trabalho por equipe *</span>
+        <span class="pequeno silencioso mono">
+          duração somada: <strong id="duracao-total">0 min</strong>
+        </span>
+      </div>
+      <p class="pequeno silencioso" style="margin-top:0;">
+        Registre as atividades na ordem de execução. Cada linha tem uma equipe e
+        um analista responsável — é isso que vai agrupado no e-mail e no PDF.
+      </p>
+
+      {% for equipe in equipes %}
+      <div class="equipe-bloco" data-equipe="{{ equipe.slug }}" data-equipe-nome="{{ equipe.name }}">
+        <div class="equipe-topo">
+          <span class="equipe-nome">{{ equipe.value }}</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select class="seletor-catalogo" aria-label="Atividade do catálogo — {{ equipe.value }}"
+                    style="width:auto; min-width:230px; font-size:12.5px; padding:5px 8px;">
+              <option value="">Adicionar do catálogo…</option>
+              {% for item in catalogo if item.equipe == equipe %}
+              <option value="{{ item.id }}"
+                      data-descricao="{{ item.descricao }}"
+                      data-duracao="{{ item.duracao_min }}"
+                      data-rollback="{{ item.rollback or '' }}">{{ item.descricao }}</option>
+              {% endfor %}
+            </select>
+            <button type="button" class="botao botao-mini adicionar-linha">+ Atividade</button>
+          </div>
+        </div>
+
+        <div class="linhas">
+          {% if rdm %}
+            {% for a in rdm.atividades if a.equipe == equipe %}
+            <div class="atividade-linha">
+              <div class="atividade-ordem">—</div>
+              <div>
+                <input type="hidden" name="atv_equipe" value="{{ equipe.name }}">
+                <textarea name="atv_descricao" rows="2" required
+                          placeholder="O que será feito">{{ a.descricao }}</textarea>
+                <input type="text" name="atv_rollback" value="{{ a.rollback or '' }}"
+                       placeholder="Rollback desta atividade (opcional)"
+                       style="margin-top:6px; font-size:12.5px;">
+              </div>
+              <div>
+                <select name="atv_analista_id">
+                  <option value="">Analista externo…</option>
+                  {% for u in usuarios %}
+                  <option value="{{ u.id }}" {{ 'selected' if a.analista_id == u.id }}>{{ u.nome_completo }}</option>
+                  {% endfor %}
+                </select>
+                <input type="text" name="atv_analista_nome" value="{{ a.analista_nome or '' }}"
+                       placeholder="Nome do analista" style="margin-top:6px; font-size:12.5px;">
+              </div>
+              <div class="campo-tempo">
+                <div class="par-tempo">
+                  <input type="number" name="atv_duracao_h" min="0" max="99" class="campo-duracao"
+                         value="{{ (a.duracao_min or 0) // 60 }}" aria-label="Horas">
+                  <span class="unidade">h</span>
+                  <input type="number" name="atv_duracao_m" min="0" max="59" step="5" class="campo-duracao"
+                         value="{{ (a.duracao_min or 0) % 60 }}" aria-label="Minutos">
+                  <span class="unidade">min</span>
+                </div>
+              </div>
+              <button type="button" class="remover-linha" aria-label="Remover atividade">×</button>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="equipe-vazia" hidden>Nenhuma atividade desta equipe nesta mudança.</div>
+      </div>
+      {% endfor %}
+
+      <hr style="border:0; border-top:1px solid var(--linha); margin:24px 0;">
+
+      <div class="linha-campos linha-2">
+        <div class="campo">
+          <label for="plano_rollback">Plano de rollback geral *</label>
+          <textarea id="plano_rollback" name="plano_rollback" required
+                    placeholder="Como voltar ao estado anterior se a janela falhar, e quem decide acionar.">{{ rdm.plano_rollback if rdm else '' }}</textarea>
+        </div>
+        <div class="campo">
+          <span class="rotulo">Tempo estimado do rollback</span>
+          <div class="par-tempo">
+            <input type="number" id="tempo_rollback_h" name="tempo_rollback_h" min="0" max="99"
+                   value="{{ (rdm.tempo_rollback_min // 60) if rdm and rdm.tempo_rollback_min else 0 }}"
+                   aria-label="Horas do rollback">
+            <span class="unidade">h</span>
+            <input type="number" id="tempo_rollback_m" name="tempo_rollback_m" min="0" max="59" step="5"
+                   value="{{ (rdm.tempo_rollback_min % 60) if rdm and rdm.tempo_rollback_min else 0 }}"
+                   aria-label="Minutos do rollback">
+            <span class="unidade">min</span>
+          </div>
+          <div class="ajuda">
+            Restore de banco costuma passar de uma hora. Some este tempo à janela
+            ao negociar o horário com a área.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 4 ------------------------------------------------------- -->
+    <section class="etapa-painel" data-painel="4" hidden>
+      <div class="marcador" style="margin-bottom:18px;">
+        <input type="checkbox" id="emergencial" name="emergencial"
+               {{ 'checked' if rdm and rdm.emergencial }}>
+        <label for="emergencial">
+          Mudança emergencial
+          <span class="ajuda" style="font-weight:400;">
+            Executada fora do fluxo normal de aprovação; exige registro do autorizador.
+          </span>
+        </label>
+      </div>
+
+      <div class="campo">
+        <label for="autorizador_id">Autorizado por</label>
+        <select id="autorizador_id" name="autorizador_id">
+          <option value="">Outro — preencher manualmente</option>
+          {% for u in autorizadores %}
+          <option value="{{ u.id }}"
+                  {{ 'selected' if rdm and rdm.autorizado_por == u.nome_completo }}>
+            {{ u.nome_completo }}
+          </option>
+          {% endfor %}
+        </select>
+        <div class="ajuda">
+          Ao escolher da lista, cargo, e-mail e telefone vêm do cadastro.
+          Novos autorizadores são cadastrados em Administração → Usuários.
+        </div>
+      </div>
+
+      <div id="autorizador-manual">
+        <div class="linha-campos linha-2">
+          <div class="campo">
+            <label for="autorizado_por">Nome</label>
+            <input type="text" id="autorizado_por" name="autorizado_por"
+                   value="{{ rdm.autorizado_por if rdm else '' }}">
+          </div>
+          <div class="campo">
+            <label for="autorizado_cargo">Cargo</label>
+            <input type="text" id="autorizado_cargo" name="autorizado_cargo"
+                   value="{{ rdm.autorizado_cargo if rdm else '' }}">
+          </div>
+        </div>
+
+        <div class="linha-campos linha-2">
+          <div class="campo">
+            <label for="autorizado_email">E-mail</label>
+            <input type="email" id="autorizado_email" name="autorizado_email"
+                   value="{{ rdm.autorizado_email if rdm else '' }}">
+          </div>
+          <div class="campo">
+            <label for="autorizado_telefone">Telefone</label>
+            <input type="tel" id="autorizado_telefone" name="autorizado_telefone"
+                   value="{{ rdm.autorizado_telefone if rdm else '' }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="departamento">Departamento</label>
+        <input type="text" id="departamento" name="departamento"
+               value="{{ rdm.departamento if rdm else '' }}">
+      </div>
+    </section>
+
+    <div class="barra-acoes">
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="botao" id="etapa-anterior">Voltar</button>
+        <button type="button" class="botao" id="etapa-proxima">Avançar</button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <a href="{{ url_for('rdm.lista') if modo == 'nova' else url_for('rdm.detalhe', rdm_id=rdm.id) }}"
+           class="botao">Cancelar</a>
+        <button type="submit" class="botao botao-primario">
+          {{ 'Criar RDM' if modo == 'nova' else 'Salvar alterações' }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</form>
+
+<!-- molde de linha de atividade, clonado pelo script -->
+<template id="molde-atividade">
+  <div class="atividade-linha">
+    <div class="atividade-ordem">—</div>
+    <div>
+      <input type="hidden" name="atv_equipe" value="">
+      <textarea name="atv_descricao" rows="2" required placeholder="O que será feito"></textarea>
+      <input type="text" name="atv_rollback" placeholder="Rollback desta atividade (opcional)"
+             style="margin-top:6px; font-size:12.5px;">
+    </div>
+    <div>
+      <select name="atv_analista_id">
+        <option value="">Analista externo…</option>
+        {% for u in usuarios %}
+        <option value="{{ u.id }}">{{ u.nome_completo }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="atv_analista_nome" placeholder="Nome do analista"
+             style="margin-top:6px; font-size:12.5px;">
+    </div>
+    <div class="campo-tempo">
+      <div class="par-tempo">
+        <input type="number" name="atv_duracao_h" min="0" max="99" value="0"
+               class="campo-duracao" aria-label="Horas">
+        <span class="unidade">h</span>
+        <input type="number" name="atv_duracao_m" min="0" max="59" step="5" value="30"
+               class="campo-duracao" aria-label="Minutos">
+        <span class="unidade">min</span>
+      </div>
+    </div>
+    <button type="button" class="remover-linha" aria-label="Remover atividade">×</button>
+  </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/rdm_form.js') }}"></script>
+{% endblock %}

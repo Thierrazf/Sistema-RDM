@@ -1,0 +1,190 @@
+{#- Comunicado de fechamento da janela: desfecho, horas reais e resultado por equipe. -#}
+{%- set cores = {
+  'INFRAESTRUTURA': '#2f6b8f', 'FRONTEND': '#a85f06',
+  'BACKEND': '#14685a', 'BANCO_DADOS': '#6d3a72'
+} -%}
+{%- set faixa = {
+  'SUCESSO': '#0f6b52', 'SUCESSO_RESSALVA': '#a85f06',
+  'ROLLBACK': '#9d2220', 'NAO_EXECUTADA': '#5b6c7f'
+} -%}
+{%- set cor_topo = faixa.get(rdm.resultado.name, '#0c2439') if rdm.resultado else '#0c2439' -%}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ rdm.identificador }} — encerramento</title>
+</head>
+<body style="margin:0; padding:0; background:#eaeef2;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+       style="background:#eaeef2; padding:24px 12px;">
+<tr><td align="center">
+
+<table role="presentation" width="640" cellpadding="0" cellspacing="0"
+       style="width:640px; max-width:100%; background:#ffffff; border:1px solid #d3dae2;
+              font-family:'Segoe UI',Arial,sans-serif; color:#0e1620; font-size:14px; line-height:1.55;">
+
+  <!-- cabeçalho: a cor já comunica o desfecho -->
+  <tr>
+    <td style="background:{{ cor_topo }}; padding:22px 26px;">
+      <div style="font-family:Consolas,monospace; font-size:11px; letter-spacing:2px;
+                  color:rgba(255,255,255,0.75); text-transform:uppercase;">
+        Encerramento de mudança · {{ rdm.identificador }}
+      </div>
+      <div style="color:#ffffff; font-size:19px; font-weight:600; margin-top:6px;">
+        {{ rdm.titulo }}
+      </div>
+      <div style="color:#ffffff; font-size:13.5px; font-weight:600; margin-top:6px;">
+        {{ rdm.resultado.value if rdm.resultado else 'Encerrada' }}
+      </div>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:24px 26px 6px;">
+      <div style="white-space:pre-line;">{{ introducao }}</div>
+      {% if observacao %}
+      <div style="margin-top:14px; padding:12px 14px; background:#f5e6cf;
+                  border-left:3px solid #a85f06; white-space:pre-line;">{{ observacao }}</div>
+      {% endif %}
+    </td>
+  </tr>
+
+  <!-- horas utilizadas -->
+  <tr>
+    <td style="padding:18px 26px 6px;">
+      <div style="font-family:Consolas,monospace; font-size:11px; letter-spacing:1.5px;
+                  text-transform:uppercase; color:#5b6c7f; margin-bottom:8px;">Tempo de execução</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="border:1px solid #d3dae2; border-collapse:collapse;">
+        <tr>
+          <td style="padding:10px 12px; border-right:1px solid #d3dae2; width:33%;">
+            <div style="font-size:11px; color:#5b6c7f;">Início real</div>
+            <div style="font-family:Consolas,monospace; font-weight:600;">
+              {{ rdm.inicio_real.strftime('%d/%m/%Y %H:%M') if rdm.inicio_real else '—' }}
+            </div>
+          </td>
+          <td style="padding:10px 12px; border-right:1px solid #d3dae2; width:33%;">
+            <div style="font-size:11px; color:#5b6c7f;">Fim real</div>
+            <div style="font-family:Consolas,monospace; font-weight:600;">
+              {{ rdm.fim_real.strftime('%d/%m/%Y %H:%M') if rdm.fim_real else '—' }}
+            </div>
+          </td>
+          <td style="padding:10px 12px;">
+            <div style="font-size:11px; color:#5b6c7f;">Horas utilizadas</div>
+            <div style="font-family:Consolas,monospace; font-weight:600;">
+              {{ rdm.duracao_real_formatada }}
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="3" style="padding:9px 12px; border-top:1px solid #d3dae2;
+                                 background:#f5f8fa; font-size:12.5px; color:#5b6c7f;">
+            Previsto: {{ rdm.duracao_formatada }} · Realizado: {{ rdm.desvio_formatado }}
+          </td>
+        </tr>
+      </table>
+
+      {% if rdm.rollback_acionado %}
+      <div style="margin-top:10px; padding:11px 14px; background:#f8e3e1;
+                  border-left:3px solid #9d2220; color:#7d1c1a;">
+        <strong>Plano de rollback acionado.</strong>
+        O ambiente foi restaurado à configuração anterior à mudança.
+      </div>
+      {% endif %}
+    </td>
+  </tr>
+
+  <!-- relato -->
+  <tr>
+    <td style="padding:16px 26px 6px;">
+      <div style="font-family:Consolas,monospace; font-size:11px; letter-spacing:1.5px;
+                  text-transform:uppercase; color:#5b6c7f; margin-bottom:6px;">Relato da execução</div>
+      <div style="white-space:pre-line;">{{ rdm.relato_encerramento or '—' }}</div>
+    </td>
+  </tr>
+
+  <!-- resultado por equipe -->
+  <tr>
+    <td style="padding:18px 26px 6px;">
+      <div style="font-family:Consolas,monospace; font-size:11px; letter-spacing:1.5px;
+                  text-transform:uppercase; color:#5b6c7f; margin-bottom:8px;">
+        Atividades executadas
+      </div>
+
+      {% for equipe, atividades in grupos.items() %}
+      {% set cor = cores.get(equipe.name, '#5b6c7f') %}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="border:1px solid #d3dae2; border-left:3px solid {{ cor }};
+                    border-collapse:collapse; margin-bottom:12px;">
+        <tr>
+          <td colspan="3" style="padding:9px 12px; background:#f5f8fa; border-bottom:1px solid #d3dae2;
+                                 font-weight:600; color:{{ cor }};">{{ equipe.value }}</td>
+        </tr>
+        {% for a in atividades %}
+        {% set cor_status = {'EXECUTADA': '#0f6b52', 'FALHOU': '#9d2220'}.get(a.status.name, '#5b6c7f') %}
+        <tr>
+          <td style="padding:9px 12px; border-bottom:1px solid #eef2f6; width:26px;
+                     font-family:Consolas,monospace; font-size:12px; color:#8a99a8; vertical-align:top;">
+            {{ '%02d'|format(a.ordem) }}
+          </td>
+          <td style="padding:9px 12px; border-bottom:1px solid #eef2f6; vertical-align:top;">
+            {{ a.descricao }}
+            {% if a.observacao %}
+            <div style="font-size:12px; color:#a85f06; margin-top:3px;">{{ a.observacao }}</div>
+            {% endif %}
+          </td>
+          <td style="padding:9px 12px; border-bottom:1px solid #eef2f6; width:150px;
+                     font-size:12.5px; color:#5b6c7f; vertical-align:top;">
+            {{ a.nome_analista }}<br>
+            <span style="color:{{ cor_status }}; font-weight:600;">{{ a.status.value }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endfor %}
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding:6px 26px 22px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="font-size:12.5px; color:#5b6c7f;">
+        <tr>
+          <td style="padding:3px 0; width:150px;">Solicitante</td>
+          <td style="padding:3px 0; color:#0e1620;">
+            {{ rdm.solicitante.nome_completo if rdm.solicitante else '—' }}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:3px 0;">Encerrada por</td>
+          <td style="padding:3px 0; color:#0e1620;">
+            {{ rdm.encerrado_por.nome_completo if rdm.encerrado_por else '—' }}
+            {%- if rdm.encerrado_em %} em {{ rdm.encerrado_em.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:3px 0;">Sistema</td>
+          <td style="padding:3px 0; color:#0e1620;">
+            {{ rdm.sistema or '—' }}{% if rdm.ambiente %} · {{ rdm.ambiente }}{% endif %}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="background:#f5f8fa; border-top:1px solid #d3dae2; padding:16px 26px;
+               font-size:12px; color:#5b6c7f;">
+      {{ assinatura }}<br>
+      Mensagem gerada automaticamente pelo sistema de gestão de mudanças.
+      Responda a este e-mail para tratar do assunto com a equipe.
+    </td>
+  </tr>
+
+</table>
+
+</td></tr>
+</table>
+</body>
+</html>
