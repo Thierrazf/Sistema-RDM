@@ -65,6 +65,19 @@ def create_app(config_name: str | None = None) -> Flask:
             "ano_atual": datetime.now(timezone.utc).year,
         }
 
+    @app.template_filter("quebras")
+    def quebras_de_linha(texto):
+        """Converte quebras de linha em <br>.
+
+        O Outlook usa o motor do Word para renderizar e ignora
+        white-space: pre-line, então o texto chegaria todo emendado.
+        """
+        from markupsafe import Markup, escape
+
+        if not texto:
+            return ""
+        return Markup("<br>".join(escape(texto).split("\n")))
+
     @app.template_filter("dt")
     def formatar_datahora(valor, formato="%d/%m/%Y %H:%M"):
         if not valor:

@@ -16,7 +16,9 @@
   h1 { font-size: 15pt; margin: 0 0 2mm; }
   .sobre { font-family: monospace; font-size: 8pt; letter-spacing: 1.4px;
            text-transform: uppercase; color: #a85f06; }
-  .cabecalho { border-bottom: 2pt solid #0c2439; padding-bottom: 4mm; margin-bottom: 5mm; }
+  .cabecalho { border-bottom: 2pt solid #0c2439; padding-bottom: 4mm; margin-bottom: 5mm;
+               position: relative; min-height: 20mm; padding-right: 24mm; }
+  .brasao { position: absolute; top: 0; right: 0; height: 20mm; }
   .subtitulo { color: #5b6c7f; font-size: 9pt; }
   .secao { font-family: monospace; font-size: 8pt; letter-spacing: 1.2px;
            text-transform: uppercase; color: #5b6c7f;
@@ -56,6 +58,7 @@
     {{ rdm.sistema or 'Sistema não informado' }}
     {%- if rdm.modulo %} · {{ rdm.modulo }}{% endif %}
     {%- if rdm.ambiente %} · {{ rdm.ambiente }}{% endif %}
+    {% if logo %}<img class="brasao" src="{{ logo }}" alt="">{% endif %}
     · Situação: {{ rdm.status.value }}
   </div>
 </div>

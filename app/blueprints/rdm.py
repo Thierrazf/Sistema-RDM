@@ -435,10 +435,10 @@ def _destinatarios_sugeridos(rdm) -> str:
 def _tela_email(rdm, tipo, introducao, observacao, destinatarios, codigo=200):
     """Renderiza a tela de e-mail já com o formulário preenchido."""
     if tipo == "encerramento":
-        assunto, html, _ = montar_email_encerramento(rdm, introducao, observacao)
+        assunto, html, _ = montar_email_encerramento(rdm, introducao, observacao, preview=True)
         padrao = texto_padrao_encerramento(rdm.resultado)
     else:
-        assunto, html, _ = montar_email_rdm(rdm, introducao, observacao)
+        assunto, html, _ = montar_email_rdm(rdm, introducao, observacao, preview=True)
         padrao = TEXTO_PADRAO_RDM
 
     return (
