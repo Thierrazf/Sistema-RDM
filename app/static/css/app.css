@@ -97,12 +97,13 @@ a:hover { text-decoration: underline; }
 /* O logo tem fundo branco opaco; o selo claro evita o retângulo solto
    sobre o azul-escuro e deixa a apresentação intencional. */
 .marca-logo {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  object-fit: contain;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
   background: #fff;
+  object-fit: contain;
   border-radius: 6px;
+  overflow: hidden;
   padding: 3px;
 }
 .marca .marca-sigla { font-size: 12px; }

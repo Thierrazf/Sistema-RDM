@@ -55,7 +55,7 @@ def _log(rdm, acao, descricao=""):
 
 
 def _proximo_numero() -> str:
-    ano = datetime.now().year
+    ano = agora().year
     prefixo = f"RDM-{ano}-"
     ultimo = (
         db.session.query(func.max(RDM.numero))
@@ -376,7 +376,7 @@ def alterar_status(rdm_id):
     anterior = rdm.status.value
     rdm.status = novo
     if novo == StatusRDM.EXECUTADA and not rdm.fim_real:
-        rdm.fim_real = datetime.now()
+        rdm.fim_real = agora()
     _log(rdm, "STATUS", f"{anterior} → {novo.value}")
     db.session.commit()
 

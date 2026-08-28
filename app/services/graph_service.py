@@ -117,8 +117,21 @@ def _descrever_erro(resposta, acao: str) -> str:
     return f"Falha ao {acao}: {codigo or resposta.status_code}. {mensagem}{dica}".strip()
 
 
-def _anexos(caminhos) -> list[dict]:
+def _anexos(caminhos, logo=None, logo_cid=None) -> list[dict]:
     saida = []
+    if logo and logo_cid:
+        arquivo_logo = Path(logo)
+        if arquivo_logo.exists():
+            saida.append(
+                {
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    "name": arquivo_logo.name,
+                    "contentType": "image/png",
+                    "contentBytes": base64.b64encode(arquivo_logo.read_bytes()).decode(),
+                    "isInline": True,
+                    "contentId": logo_cid,
+                }
+            )
     for caminho in caminhos or []:
         arquivo = Path(caminho)
         if not arquivo.exists():
@@ -134,7 +147,10 @@ def _anexos(caminhos) -> list[dict]:
     return saida
 
 
-def enviar_graph(destinatarios, assunto, html, texto, anexos=None, cfg=None):
+def enviar_graph(
+    destinatarios, assunto, html, texto, anexos=None,
+    logo=None, logo_cid=None, cfg=None
+):
     """Envia pela Graph. Devolve (ok, erro) no mesmo formato do SMTP."""
     cfg = cfg or current_app.config
 
@@ -159,7 +175,7 @@ def enviar_graph(destinatarios, assunto, html, texto, anexos=None, cfg=None):
             "toRecipients": [
                 {"emailAddress": {"address": endereco}} for endereco in destinatarios
             ],
-            "attachments": _anexos(anexos),
+            "attachments": _anexos(anexos, logo=logo, logo_cid=logo_cid),
         },
         "saveToSentItems": True,
     }

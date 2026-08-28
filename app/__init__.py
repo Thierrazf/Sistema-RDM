@@ -1,6 +1,7 @@
 import os
 import secrets
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import click
 from flask import Flask, render_template, session
@@ -82,7 +83,10 @@ def create_app(config_name: str | None = None) -> Flask:
     def formatar_datahora(valor, formato="%d/%m/%Y %H:%M"):
         if not valor:
             return "—"
-        return valor.strftime(formato)
+        if valor.tzinfo is None:
+            valor = valor.replace(tzinfo=timezone.utc)
+        fuso_local = ZoneInfo(app.config.get("TIMEZONE", "America/Sao_Paulo"))
+        return valor.astimezone(fuso_local).strftime(formato)
 
     # Erros
     for codigo in (401, 403, 404, 429, 500):
