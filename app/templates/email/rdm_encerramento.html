@@ -42,7 +42,9 @@
 
   <tr>
     <td style="padding:24px 26px 6px;">
-      <div style="white-space:pre-line;">{{ introducao }}</div>
+      {% for paragrafo in introducao.split('\n\n') %}
+      <p style="margin:0 0 14px; white-space:pre-line;">{{ paragrafo }}</p>
+      {% endfor %}
       {% if observacao %}
       <div style="margin-top:14px; padding:12px 14px; background:#f5e6cf;
                   border-left:3px solid #a85f06; white-space:pre-line;">{{ observacao }}</div>
