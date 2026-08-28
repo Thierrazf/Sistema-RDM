@@ -162,7 +162,7 @@
   <tr><td class="rot">Encerrada por</td>
       <td colspan="3">
         {{ rdm.encerrado_por.nome_completo if rdm.encerrado_por else '—' }}
-        {%- if rdm.encerrado_em %} em {{ rdm.encerrado_em.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+        {%- if rdm.encerrado_em %} em {{ rdm.encerrado_em|dt('%d/%m/%Y %H:%M') }}{% endif %}
       </td></tr>
 </table>
 <div class="caixa" style="margin-top:3mm;">{{ rdm.relato_encerramento or '—' }}</div>

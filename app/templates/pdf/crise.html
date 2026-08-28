@@ -36,7 +36,7 @@
   <tr><td class="rot">Local</td><td>{{ crise.local or '—' }}</td>
       <td class="rot">Origem</td><td>{{ crise.origem or '—' }}</td></tr>
   <tr><td class="rot">Aberta por</td><td>{{ crise.aberta_por.nome if crise.aberta_por else '—' }}</td>
-      <td class="rot">Aberta em</td><td>{{ crise.criado_em.strftime('%d/%m/%Y %H:%M') }}</td></tr>
+      <td class="rot">Aberta em</td><td>{{ crise.criado_em|dt('%d/%m/%Y %H:%M') }}</td></tr>
   <tr><td class="rot">Emitido em</td><td colspan="3">{{ emitido_em }}</td></tr>
 </table>
 
@@ -53,7 +53,7 @@
 <table class="reg">
   {% for log in crise.logs|reverse %}
   <tr>
-    <td class="quando">{{ log.criado_em.strftime('%d/%m/%y %H:%M') }}</td>
+    <td class="quando">{{ log.criado_em|dt('%d/%m/%y %H:%M') }}</td>
     <td>{{ log.descricao }}<br><span style="color:#5b6c7f; font-size:8.5pt;">{{ log.usuario_nome }}</span></td>
   </tr>
   {% endfor %}

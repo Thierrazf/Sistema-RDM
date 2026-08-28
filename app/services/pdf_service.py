@@ -6,8 +6,11 @@ elimina a dependência de binário externo no servidor.
 
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from flask import current_app, render_template
+
+from ..models import agora
 
 
 def _logo() -> str | None:
@@ -25,6 +28,11 @@ def _pasta_pdf() -> Path:
     return pasta
 
 
+def _agora_local() -> str:
+    fuso = ZoneInfo(current_app.config.get("TIMEZONE", "America/Sao_Paulo"))
+    return agora().astimezone(fuso).strftime("%d/%m/%Y às %H:%M")
+
+
 def _renderizar(html: str, destino: Path) -> Path:
     from weasyprint import HTML  # import tardio: acelera o boot da aplicação
 
@@ -38,7 +46,7 @@ def gerar_pdf_rdm(rdm) -> Path:
         rdm=rdm,
         logo=_logo(),
         grupos=rdm.atividades_por_equipe(),
-        emitido_em=datetime.now().strftime("%d/%m/%Y às %H:%M"),
+        emitido_em=_agora_local(),
     )
     destino = _pasta_pdf() / f"{rdm.identificador}.pdf"
     return _renderizar(html, destino)
