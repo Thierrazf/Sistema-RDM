@@ -11,6 +11,8 @@ from email.message import EmailMessage
 from email.utils import formataddr
 from pathlib import Path
 
+from zoneinfo import ZoneInfo
+
 from flask import current_app, render_template, url_for
 
 from .graph_service import configurado as graph_configurado
@@ -195,7 +197,14 @@ def montar_email_rdm(rdm, texto_introducao=None, observacao=None, preview=False)
         "assinatura": current_app.config["EMAIL_NOME_REMETENTE"],
         "logo_src": _origem_logo(preview),
     }
-    janela = rdm.inicio_previsto.strftime("%d/%m/%Y %H:%M") if rdm.inicio_previsto else "a definir"
+    if rdm.inicio_previsto:
+        fuso = ZoneInfo(current_app.config.get("TIMEZONE", "America/Sao_Paulo"))
+        dt = rdm.inicio_previsto
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=fuso)
+        janela = dt.astimezone(fuso).strftime("%d/%m/%Y %H:%M")
+    else:
+        janela = "a definir"
     assunto = f"[{rdm.identificador}] {rdm.titulo} — janela {janela}"
     html = render_template("email/rdm.html", **contexto)
     texto = render_template("email/rdm.txt", **contexto)

@@ -30,7 +30,7 @@
         <tr><td style="padding:8px 12px; border-bottom:1px solid #eef2f6; color:#5b6c7f;">Local</td>
             <td style="padding:8px 12px; border-bottom:1px solid #eef2f6;">{{ crise.local or '—' }}</td></tr>
         <tr><td style="padding:8px 12px; color:#5b6c7f;">Aberta em</td>
-            <td style="padding:8px 12px;">{{ crise.criado_em.strftime('%d/%m/%Y %H:%M') }}</td></tr>
+            <td style="padding:8px 12px;">{{ crise.criado_em|dt('%d/%m/%Y %H:%M') }}</td></tr>
       </table>
       <div style="font-weight:600;">Problema</div>
       <div style="white-space:pre-line;">{{ crise.problema }}</div>

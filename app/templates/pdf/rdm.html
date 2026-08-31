@@ -98,9 +98,9 @@
 {% endif %}
 <table class="dados">
   <tr><td class="rot">Início previsto</td>
-      <td>{{ rdm.inicio_previsto.strftime('%d/%m/%Y %H:%M') if rdm.inicio_previsto else 'a definir' }}</td>
+      <td>{{ rdm.inicio_previsto|dt('%d/%m/%Y %H:%M') if rdm.inicio_previsto else 'a definir' }}</td>
       <td class="rot">Fim previsto</td>
-      <td>{{ rdm.fim_previsto.strftime('%d/%m/%Y %H:%M') if rdm.fim_previsto else 'a definir' }}</td></tr>
+      <td>{{ rdm.fim_previsto|dt('%d/%m/%Y %H:%M') if rdm.fim_previsto else 'a definir' }}</td></tr>
   <tr><td class="rot">Duração somada</td><td>{{ rdm.duracao_formatada }}</td>
       <td class="rot">Equipes</td>
       <td>{{ rdm.equipes_envolvidas | map(attribute='value') | join(', ') or '—' }}</td></tr>
@@ -154,9 +154,9 @@
       <td class="rot">Rollback</td>
       <td>{{ 'Acionado' if rdm.rollback_acionado else 'Não foi necessário' }}</td></tr>
   <tr><td class="rot">Início real</td>
-      <td>{{ rdm.inicio_real.strftime('%d/%m/%Y %H:%M') if rdm.inicio_real else '—' }}</td>
+      <td>{{ rdm.inicio_real|dt('%d/%m/%Y %H:%M') if rdm.inicio_real else '—' }}</td>
       <td class="rot">Fim real</td>
-      <td>{{ rdm.fim_real.strftime('%d/%m/%Y %H:%M') if rdm.fim_real else '—' }}</td></tr>
+      <td>{{ rdm.fim_real|dt('%d/%m/%Y %H:%M') if rdm.fim_real else '—' }}</td></tr>
   <tr><td class="rot">Horas utilizadas</td><td>{{ rdm.duracao_real_formatada }}</td>
       <td class="rot">Comparado ao previsto</td><td>{{ rdm.desvio_formatado }}</td></tr>
   <tr><td class="rot">Encerrada por</td>

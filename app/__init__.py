@@ -83,9 +83,11 @@ def create_app(config_name: str | None = None) -> Flask:
     def formatar_datahora(valor, formato="%d/%m/%Y %H:%M"):
         if not valor:
             return "—"
+        fuso_local = ZoneInfo(app.config.get("TIMEZONE", "America/Sao_Paulo"))
+        # SQLite não preserva tzinfo em campos DateTime; valores vindos do banco
+        # chegam como "naive" e representam o instante em UTC por convenção do app.
         if valor.tzinfo is None:
             valor = valor.replace(tzinfo=timezone.utc)
-        fuso_local = ZoneInfo(app.config.get("TIMEZONE", "America/Sao_Paulo"))
         return valor.astimezone(fuso_local).strftime(formato)
 
     # Erros

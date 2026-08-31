@@ -53,11 +53,12 @@ def gerar_pdf_rdm(rdm) -> Path:
 
 
 def gerar_pdf_crise(crise) -> Path:
+    fuso = ZoneInfo(current_app.config.get("TIMEZONE", "America/Sao_Paulo"))
     html = render_template(
         "pdf/crise.html",
         crise=crise,
         logo=_logo(),
-        emitido_em=datetime.now().strftime("%d/%m/%Y às %H:%M"),
+        emitido_em=agora().astimezone(fuso).strftime("%d/%m/%Y às %H:%M"),
     )
     destino = _pasta_pdf() / f"{crise.identificador}.pdf"
     return _renderizar(html, destino)

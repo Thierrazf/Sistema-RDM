@@ -7,8 +7,8 @@
 ================================================================
 Sistema........: {{ rdm.sistema or 'nao informado' }}{% if rdm.ambiente %} ({{ rdm.ambiente }}){% endif %}
 
-Inicio.........: {{ rdm.inicio_previsto.strftime('%d/%m/%Y %H:%M') if rdm.inicio_previsto else 'a definir' }}
-Fim previsto...: {{ rdm.fim_previsto.strftime('%d/%m/%Y %H:%M') if rdm.fim_previsto else 'a definir' }}
+Inicio.........: {{ rdm.inicio_previsto|dt('%d/%m/%Y %H:%M') if rdm.inicio_previsto else 'a definir' }}
+Fim previsto...: {{ rdm.fim_previsto|dt('%d/%m/%Y %H:%M') if rdm.fim_previsto else 'a definir' }}
 Duracao........: {{ rdm.duracao_formatada }}
 Criticidade....: {{ rdm.criticidade.value }}{% if rdm.emergencial %}
 Tipo...........: MUDANCA EMERGENCIAL{% endif %}{% if rdm.indisponibilidade %}

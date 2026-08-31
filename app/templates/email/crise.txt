@@ -7,7 +7,7 @@ As atualizacoes seguirao por este mesmo canal ate o encerramento.
 Situacao...: {{ crise.status }}
 Criticidade: {{ crise.criticidade.value }}
 Local......: {{ crise.local or '-' }}
-Aberta em..: {{ crise.criado_em.strftime('%d/%m/%Y %H:%M') }}
+Aberta em..: {{ crise.criado_em|dt('%d/%m/%Y %H:%M') }}
 
 PROBLEMA
 {{ crise.problema }}

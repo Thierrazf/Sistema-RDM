@@ -63,13 +63,13 @@
           <td style="padding:10px 12px; border-right:1px solid #d3dae2; width:33%;">
             <div style="font-size:11px; color:#5b6c7f;">Início real</div>
             <div style="font-family:Consolas,monospace; font-weight:600;">
-              {{ rdm.inicio_real.strftime('%d/%m/%Y %H:%M') if rdm.inicio_real else '—' }}
+              {{ rdm.inicio_real|dt('%d/%m/%Y %H:%M') if rdm.inicio_real else '—' }}
             </div>
           </td>
           <td style="padding:10px 12px; border-right:1px solid #d3dae2; width:33%;">
             <div style="font-size:11px; color:#5b6c7f;">Fim real</div>
             <div style="font-family:Consolas,monospace; font-weight:600;">
-              {{ rdm.fim_real.strftime('%d/%m/%Y %H:%M') if rdm.fim_real else '—' }}
+              {{ rdm.fim_real|dt('%d/%m/%Y %H:%M') if rdm.fim_real else '—' }}
             </div>
           </td>
           <td style="padding:10px 12px;">
@@ -162,7 +162,7 @@
           <td style="padding:3px 0;">Encerrada por</td>
           <td style="padding:3px 0; color:#0e1620;">
             {{ rdm.encerrado_por.nome_completo if rdm.encerrado_por else '—' }}
-            {%- if rdm.encerrado_em %} em {{ rdm.encerrado_em.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+            {%- if rdm.encerrado_em %} em {{ rdm.encerrado_em|dt('%d/%m/%Y %H:%M') }}{% endif %}
           </td>
         </tr>
         <tr>

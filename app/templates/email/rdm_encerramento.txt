@@ -11,8 +11,8 @@ Sistema........: {{ rdm.sistema or 'nao informado' }}{% if rdm.ambiente %} ({{ r
 
 
 TEMPO DE EXECUCAO
-Inicio real....: {{ rdm.inicio_real.strftime('%d/%m/%Y %H:%M') if rdm.inicio_real else '-' }}
-Fim real.......: {{ rdm.fim_real.strftime('%d/%m/%Y %H:%M') if rdm.fim_real else '-' }}
+Inicio real....: {{ rdm.inicio_real|dt('%d/%m/%Y %H:%M') if rdm.inicio_real else '-' }}
+Fim real.......: {{ rdm.fim_real|dt('%d/%m/%Y %H:%M') if rdm.fim_real else '-' }}
 Horas usadas...: {{ rdm.duracao_real_formatada }}
 Previsto.......: {{ rdm.duracao_formatada }} ({{ rdm.desvio_formatado }})
 {% if rdm.rollback_acionado %}
@@ -31,7 +31,7 @@ ATIVIDADES EXECUTADAS
 {% endfor %}
 {% endfor %}
 Solicitante....: {{ rdm.solicitante.nome_completo if rdm.solicitante else '-' }}
-Encerrada por..: {{ rdm.encerrado_por.nome_completo if rdm.encerrado_por else '-' }}{% if rdm.encerrado_em %} em {{ rdm.encerrado_em.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+Encerrada por..: {{ rdm.encerrado_por.nome_completo if rdm.encerrado_por else '-' }}{% if rdm.encerrado_em %} em {{ rdm.encerrado_em|dt('%d/%m/%Y %H:%M') }}{% endif %}
 
 --
 {{ assinatura }}

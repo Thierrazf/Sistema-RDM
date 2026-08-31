@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from flask import (
     Blueprint,
@@ -76,9 +77,14 @@ def _enum_ou_none(enum_cls, valor):
 def _dt(valor):
     if not valor:
         return None
+    fuso_local = ZoneInfo("America/Sao_Paulo")
     for formato in ("%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
         try:
-            return datetime.strptime(valor, formato)
+            dt = datetime.strptime(valor, formato)
+            # Os inputs do formulário vêm no horário local do usuário; ao salvar em
+            # SQLite, a informação de fuso não fica persistida, então convertemos
+            # explicitamente para UTC para manter a mesma referência temporal.
+            return dt.replace(tzinfo=fuso_local).astimezone(timezone.utc)
         except ValueError:
             continue
     return None

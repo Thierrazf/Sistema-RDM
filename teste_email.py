@@ -4,7 +4,7 @@ Não faz chamadas reais à Microsoft — a camada HTTP é substituída por uma
 simulação que devolve as respostas que a Graph devolveria.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 from app import create_app
@@ -54,6 +54,18 @@ with app.app_context():
     db.session.add(rdm)
     db.session.commit()
     rdm_id = rdm.id
+
+print("\nFormatação de data e hora")
+with app.app_context():
+    filtro_dt = app.jinja_env.filters["dt"]
+    checar(
+        "datetime sem tz vindo do SQLite é tratado como UTC e convertido para Brasília",
+        filtro_dt(datetime(2026, 8, 28, 15, 0)) == "28/08/2026 12:00",
+    )
+    checar(
+        "datetime UTC é convertido para horário de Brasília",
+        filtro_dt(datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)) == "28/08/2026 09:00",
+    )
 
 print("\nEscolha do mecanismo")
 with app.app_context():

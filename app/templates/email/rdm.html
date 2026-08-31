@@ -72,13 +72,13 @@
           <td style="padding:10px 12px; border-right:1px solid #d3dae2; width:33%;">
             <div style="font-size:11px; color:#5b6c7f;">Início</div>
             <div style="font-family:Consolas,monospace; font-weight:600;">
-              {{ rdm.inicio_previsto.strftime('%d/%m/%Y %H:%M') if rdm.inicio_previsto else 'a definir' }}
+              {{ rdm.inicio_previsto|dt('%d/%m/%Y %H:%M') if rdm.inicio_previsto else 'a definir' }}
             </div>
           </td>
           <td style="padding:10px 12px; border-right:1px solid #d3dae2; width:33%;">
             <div style="font-size:11px; color:#5b6c7f;">Fim previsto</div>
             <div style="font-family:Consolas,monospace; font-weight:600;">
-              {{ rdm.fim_previsto.strftime('%d/%m/%Y %H:%M') if rdm.fim_previsto else 'a definir' }}
+              {{ rdm.fim_previsto|dt('%d/%m/%Y %H:%M') if rdm.fim_previsto else 'a definir' }}
             </div>
           </td>
           <td style="padding:10px 12px;">
