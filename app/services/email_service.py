@@ -7,6 +7,7 @@ exatamente o que será enviado antes de disparar.
 
 import smtplib
 import ssl
+from datetime import timezone
 from email.message import EmailMessage
 from email.utils import formataddr
 from pathlib import Path
@@ -201,7 +202,10 @@ def montar_email_rdm(rdm, texto_introducao=None, observacao=None, preview=False)
         fuso = ZoneInfo(current_app.config.get("TIMEZONE", "America/Sao_Paulo"))
         dt = rdm.inicio_previsto
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=fuso)
+            # O SQLite não preserva tzinfo; no app, datetimes sem fuso que chegam
+            # do banco representam UTC. Se assumirmos que já são locais, a janela
+            # aparece deslocada no assunto do e-mail.
+            dt = dt.replace(tzinfo=timezone.utc)
         janela = dt.astimezone(fuso).strftime("%d/%m/%Y %H:%M")
     else:
         janela = "a definir"

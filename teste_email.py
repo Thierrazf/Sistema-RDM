@@ -11,7 +11,7 @@ from app import create_app
 from app.extensions import db
 from app.models import RDM, Atividade, Equipe, Perfil, User
 from app.services import graph_service
-from app.services.email_service import backend_ativo
+from app.services.email_service import backend_ativo, montar_email_rdm
 
 SENHA = "Janela@2026!ok"
 falhas = []
@@ -42,6 +42,7 @@ with app.app_context():
     u.definir_senha(SENHA)
     db.session.add(u)
     db.session.commit()
+    usuario_id = u.id
 
     inicio = datetime.now() + timedelta(days=1)
     rdm = RDM(numero="RDM-2026-001", titulo="Atualização do portal",
@@ -65,6 +66,20 @@ with app.app_context():
     checar(
         "datetime UTC é convertido para horário de Brasília",
         filtro_dt(datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)) == "28/08/2026 09:00",
+    )
+
+    usuario = db.session.get(User, usuario_id)
+    rdm_teste = RDM(
+        numero="RDM-2026-002",
+        titulo="Teste de horário de e-mail",
+        solicitante_id=usuario.id,
+        inicio_previsto=datetime(2026, 8, 28, 15, 0),
+        fim_previsto=datetime(2026, 8, 28, 17, 0),
+    )
+    assunto, _, _ = montar_email_rdm(rdm_teste)
+    checar(
+        "assunto do e-mail usa o horário em Brasília",
+        "12:00" in assunto and "15:00" not in assunto,
     )
 
 print("\nEscolha do mecanismo")
