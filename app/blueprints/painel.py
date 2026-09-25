@@ -5,7 +5,7 @@ from flask_login import login_required
 from sqlalchemy import extract, func
 
 from ..extensions import db
-from ..models import RDM, Atividade, Crise, Equipe, StatusRDM, User
+from ..models import RDM, Atividade, Crise, Criticidade, Equipe, StatusRDM, User
 
 painel_bp = Blueprint("painel", __name__)
 
@@ -65,8 +65,8 @@ MESES = [
 @painel_bp.route("/indicadores")
 @login_required
 def indicadores():
-    """Quantidade de RDMs por ano, por mês e por analista responsável."""
-    anos = [
+    """Exibe métricas de RDMs e crises por período e situação."""
+    anos_rdm = [
         int(a)
         for (a,) in db.session.query(extract("year", RDM.criado_em))
         .distinct()
@@ -74,9 +74,16 @@ def indicadores():
         .all()
         if a
     ]
+    anos_crise = [
+        int(a)
+        for (a,) in db.session.query(extract("year", Crise.criado_em))
+        .distinct()
+        .order_by(extract("year", Crise.criado_em).desc())
+        .all()
+        if a
+    ]
     ano_atual = datetime.now().year
-    if ano_atual not in anos:
-        anos.insert(0, ano_atual)
+    anos = sorted(set(anos_rdm + anos_crise + [ano_atual]), reverse=True)
 
     ano = request.args.get("ano", type=int) or anos[0]
 
@@ -162,6 +169,45 @@ def indicadores():
         .all()
     }
 
+    por_ano_crise = {
+        int(a): total
+        for a, total in db.session.query(
+            extract("year", Crise.criado_em), func.count(Crise.id)
+        )
+        .group_by(extract("year", Crise.criado_em))
+        .all()
+        if a
+    }
+    serie_anos_crise = [(a, por_ano_crise.get(a, 0)) for a in sorted(por_ano_crise)]
+
+    contagem_mes_crise = {
+        int(m): total
+        for m, total in db.session.query(
+            extract("month", Crise.criado_em), func.count(Crise.id)
+        )
+        .filter(extract("year", Crise.criado_em) == ano)
+        .group_by(extract("month", Crise.criado_em))
+        .all()
+        if m
+    }
+    serie_meses_crise = [
+        (MESES[m - 1], contagem_mes_crise.get(m, 0)) for m in range(1, 13)
+    ]
+
+    por_status_crise = dict(
+        db.session.query(Crise.status, func.count(Crise.id))
+        .filter(extract("year", Crise.criado_em) == ano)
+        .group_by(Crise.status)
+        .all()
+    )
+
+    por_criticidade_crise = dict(
+        db.session.query(Crise.criticidade, func.count(Crise.id))
+        .filter(extract("year", Crise.criado_em) == ano)
+        .group_by(Crise.criticidade)
+        .all()
+    )
+
     return render_template(
         "painel/indicadores.html",
         anos=anos,
@@ -171,8 +217,15 @@ def indicadores():
         analistas=analistas,
         por_equipe=por_equipe,
         por_status=por_status,
+        serie_anos_crise=serie_anos_crise,
+        serie_meses_crise=serie_meses_crise,
+        por_status_crise=por_status_crise,
+        por_criticidade_crise=por_criticidade_crise,
+        criticidades=list(Criticidade),
         equipes=list(Equipe),
         status_opcoes=list(StatusRDM),
         total_ano=sum(contagem_mes.values()),
         total_geral=sum(por_ano.values()),
+        total_crises_ano=sum(contagem_mes_crise.values()),
+        total_crises_geral=sum(por_ano_crise.values()),
     )

@@ -106,6 +106,7 @@ abrir(f"/rdm/{rdm_id}/email")
 abrir("/crises/")
 abrir("/crises/nova")
 abrir(f"/crises/{crise_id}")
+abrir("/indicadores")
 
 print("\nAdministração")
 abrir("/admin/usuarios")

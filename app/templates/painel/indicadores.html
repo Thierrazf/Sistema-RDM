@@ -39,6 +39,26 @@
   </div>
 </div>
 
+<div class="grade grade-3" style="margin-bottom:18px;">
+  <div class="indicador">
+    <div class="indicador-rotulo">Crises em {{ ano }}</div>
+    <div class="indicador-valor">{{ total_crises_ano }}</div>
+    <div class="indicador-nota">abertas no ano selecionado</div>
+  </div>
+  <div class="indicador">
+    <div class="indicador-rotulo">Crises registradas</div>
+    <div class="indicador-valor">{{ total_crises_geral }}</div>
+    <div class="indicador-nota">desde o início do uso</div>
+  </div>
+  <div class="indicador">
+    <div class="indicador-rotulo">Média mensal de crises</div>
+    <div class="indicador-valor">
+      {{ '%.1f'|format(total_crises_ano / 12) if total_crises_ano else 0 }}
+    </div>
+    <div class="indicador-nota">considerando os 12 meses</div>
+  </div>
+</div>
+
 <div class="cartao">
   <div class="cartao-topo">
     <h2 class="cartao-titulo">RDMs por mês — {{ ano }}</h2>
@@ -46,6 +66,16 @@
   </div>
   <div class="cartao-corpo">
     {{ m.grafico_colunas(serie_meses) }}
+  </div>
+</div>
+
+<div class="cartao">
+  <div class="cartao-topo">
+    <h2 class="cartao-titulo">Crises por mês — {{ ano }}</h2>
+    <span class="pequeno silencioso mono">{{ total_crises_ano }} no ano</span>
+  </div>
+  <div class="cartao-corpo">
+    {{ m.grafico_colunas(serie_meses_crise, rotulo_item='Crise(s)') }}
   </div>
 </div>
 
@@ -90,6 +120,53 @@
   </div>
 
   <div>
+    <div class="cartao">
+      <div class="cartao-topo">
+        <h2 class="cartao-titulo">Situação das crises — {{ ano }}</h2>
+      </div>
+      <div class="cartao-corpo">
+        {% set maximo_status_crise = (por_status_crise.values() | max) or 1 %}
+        {% for status, total in por_status_crise.items() %}
+        <div class="barra-linha">
+          <div class="barra-rotulo">{{ status }}</div>
+          <div class="barra-trilho">
+            <div class="barra-preenchida"
+                 style="width: {{ (total / maximo_status_crise * 100) | round(1) }}%;
+                        background: var(--vermelho)"></div>
+          </div>
+          <div class="barra-valor mono">{{ total }}</div>
+        </div>
+        {% else %}
+        <p class="silencioso pequeno" style="margin:0;">Nada registrado em {{ ano }}.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="cartao-topo">
+        <h2 class="cartao-titulo">Crises por criticidade — {{ ano }}</h2>
+      </div>
+      <div class="cartao-corpo">
+        {% set maximo_criticidade_crise = (por_criticidade_crise.values() | max) or 1 %}
+        {% for criticidade in criticidades %}
+        {% set total = por_criticidade_crise.get(criticidade, 0) %}
+        {% if total %}
+        <div class="barra-linha">
+          <div class="barra-rotulo">{{ criticidade.value }}</div>
+          <div class="barra-trilho">
+            <div class="barra-preenchida"
+                 style="width: {{ (total / maximo_criticidade_crise * 100) | round(1) }}%;
+                        background: var(--vermelho)"></div>
+          </div>
+          <div class="barra-valor mono">{{ total }}</div>
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="silencioso pequeno" style="margin:0;">Nada registrado em {{ ano }}.</p>
+        {% endfor %}
+      </div>
+    </div>
+
     <div class="cartao">
       <div class="cartao-topo">
         <h2 class="cartao-titulo">RDMs por equipe — {{ ano }}</h2>
@@ -147,6 +224,17 @@
   </div>
   <div class="cartao-corpo">
     {{ m.grafico_colunas(serie_anos, destaque=ano) }}
+  </div>
+</div>
+{% endif %}
+
+{% if serie_anos_crise | length > 1 %}
+<div class="cartao">
+  <div class="cartao-topo">
+    <h2 class="cartao-titulo">Evolução anual de crises</h2>
+  </div>
+  <div class="cartao-corpo">
+    {{ m.grafico_colunas(serie_anos_crise, destaque=ano) }}
   </div>
 </div>
 {% endif %}
