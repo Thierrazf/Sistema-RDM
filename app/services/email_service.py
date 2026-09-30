@@ -14,20 +14,10 @@ from pathlib import Path
 
 from zoneinfo import ZoneInfo
 
-from flask import current_app, render_template, url_for
+from flask import current_app, render_template
 
 from .graph_service import configurado as graph_configurado
 from .graph_service import enviar_graph
-
-# Identificador do logo dentro da mensagem. O Outlook bloqueia imagens
-# externas, então o arquivo viaja embutido e o HTML aponta para cid:.
-LOGO_CID = "logo"
-
-
-def caminho_logo() -> Path | None:
-    caminho = Path(current_app.root_path) / "static" / "img" / "logo.png"
-    return caminho if caminho.exists() else None
-
 
 TEXTO_PADRAO_RDM = (
     "Prezados,\n\n"
@@ -103,12 +93,6 @@ def _montar_mensagem(destinatarios, assunto, html, texto, anexos=None):
     msg.set_content(texto)
     msg.add_alternative(html, subtype="html")
 
-    # O logo entra como parte relacionada à versão HTML, não como anexo solto.
-    logo = caminho_logo()
-    if logo:
-        msg.get_payload()[-1].add_related(
-            logo.read_bytes(), maintype="image", subtype="png", cid=f"<{LOGO_CID}>"
-        )
     for caminho in anexos or []:
         p = Path(caminho)
         if not p.exists():
@@ -157,11 +141,8 @@ def enviar(destinatarios, assunto, html, texto, anexos=None, assincrono=False):
     que alguns segundos de espera.
     """
     if backend_ativo() == "graph":
-        logo = caminho_logo()
         return enviar_graph(
             destinatarios, assunto, html, texto, anexos,
-            logo=str(logo) if logo else None,
-            logo_cid=LOGO_CID if logo else None,
         )
 
     msg = _montar_mensagem(destinatarios, assunto, html, texto, anexos)
@@ -176,18 +157,6 @@ def enviar(destinatarios, assunto, html, texto, anexos=None, assincrono=False):
 
 
 # ----------------------------------------------------------------------- RDM
-def _origem_logo(preview: bool) -> str | None:
-    """Endereço da imagem no HTML.
-
-    No envio o logo viaja embutido e é referenciado por cid:. Na tela de
-    pré-visualização isso não resolve, então lá vale o arquivo estático.
-    """
-    if not caminho_logo():
-        return None
-    if preview:
-        return url_for("static", filename="img/logo.png")
-    return f"cid:{LOGO_CID}"
-
 def montar_email_rdm(rdm, texto_introducao=None, observacao=None, preview=False):
     """Devolve (assunto, html, texto) — usado tanto no preview quanto no envio."""
     contexto = {
@@ -196,7 +165,6 @@ def montar_email_rdm(rdm, texto_introducao=None, observacao=None, preview=False)
         "observacao": (observacao or "").strip(),
         "grupos": rdm.atividades_por_equipe(),
         "assinatura": current_app.config["EMAIL_NOME_REMETENTE"],
-        "logo_src": _origem_logo(preview),
     }
     if rdm.inicio_previsto:
         fuso = ZoneInfo(current_app.config.get("TIMEZONE", "America/Sao_Paulo"))
@@ -232,7 +200,6 @@ def montar_email_encerramento(rdm, texto_introducao=None, observacao=None, previ
         "observacao": (observacao or "").strip(),
         "grupos": rdm.atividades_por_equipe(),
         "assinatura": current_app.config["EMAIL_NOME_REMETENTE"],
-        "logo_src": _origem_logo(preview),
     }
     desfecho = rdm.resultado.value if rdm.resultado else "encerrada"
     assunto = f"[{rdm.identificador}] Encerramento — {rdm.titulo} — {desfecho}"
