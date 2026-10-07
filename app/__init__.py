@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 import click
 from flask import Flask, render_template, session
 from flask_login import current_user
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import get_config  # carrega o .env ao ser importado
 from .extensions import csrf, db, limiter, login_manager, migrate
@@ -13,6 +14,7 @@ from .extensions import csrf, db, limiter, login_manager, migrate
 
 def create_app(config_name: str | None = None) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
     app.config.from_object(get_config(config_name))
 
     os.makedirs(app.instance_path, exist_ok=True)

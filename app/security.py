@@ -105,13 +105,24 @@ def normalizar_emails(*valores) -> list[str]:
 
 
 # ---------------------------------------------------------------- auditoria
+def _ip_do_cliente() -> str:
+    cabecalho = request.headers.get("X-Forwarded-For", "")
+    if cabecalho:
+        ips = [p.strip() for p in cabecalho.split(",") if p.strip()]
+        if ips:
+            return ips[0][:64]
+
+    rota = next(iter(request.access_route or []), request.remote_addr or "")
+    return (rota or "unknown")[:64]
+
+
 def registrar_acesso(evento: str, email: str = "", usuario_id=None, detalhe: str = ""):
     db.session.add(
         LogAcesso(
             email=(email or "")[:180],
             usuario_id=usuario_id,
             evento=evento,
-            ip=(request.headers.get("X-Forwarded-For", request.remote_addr) or "")[:64],
+            ip=_ip_do_cliente(),
             user_agent=(request.user_agent.string or "")[:255],
             detalhe=detalhe[:255],
         )

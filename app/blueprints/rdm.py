@@ -136,10 +136,17 @@ def _aplicar_formulario(rdm: RDM) -> list[str]:
     if len(rdm.titulo) < 5:
         erros.append("Informe um título com pelo menos 5 caracteres.")
 
-    solicitante_id = f.get("solicitante_id")
-    if solicitante_id and solicitante_id.isdigit():
-        rdm.solicitante_id = int(solicitante_id)
-    elif not rdm.solicitante_id:
+    if current_user.is_gestor:
+        solicitante_id = f.get("solicitante_id")
+        if solicitante_id and solicitante_id.isdigit():
+            usuario = db.session.get(User, int(solicitante_id))
+            if usuario:
+                rdm.solicitante_id = usuario.id
+            else:
+                erros.append("Solicitante informado é inválido.")
+        elif not rdm.solicitante_id:
+            rdm.solicitante_id = current_user.id
+    else:
         rdm.solicitante_id = current_user.id
 
     rdm.sistema = (f.get("sistema") or "").strip()
@@ -148,7 +155,18 @@ def _aplicar_formulario(rdm: RDM) -> list[str]:
     rdm.ambiente = (f.get("ambiente") or "").strip()
 
     revisor_id = f.get("revisor_id")
-    rdm.revisor_id = int(revisor_id) if revisor_id and revisor_id.isdigit() else None
+    if revisor_id and revisor_id.isdigit():
+        revisor = db.session.get(User, int(revisor_id))
+        if not revisor:
+            erros.append("Revisor informado é inválido.")
+            rdm.revisor_id = None
+        elif current_user.is_gestor or revisor.id == current_user.id:
+            rdm.revisor_id = revisor.id
+        else:
+            erros.append("Você não pode designar outro usuário como revisor.")
+            rdm.revisor_id = None
+    else:
+        rdm.revisor_id = None
 
     rdm.objetivo = (f.get("objetivo") or "").strip()
     if len(rdm.objetivo) < 10:
