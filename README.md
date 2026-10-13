@@ -123,7 +123,7 @@ nem tem senha. O comando `flask carregar-pessoas` já cria as autoridades
 iniciais; ajuste os e-mails em Administração → Usuários.
 
 O campo **cargo ou patente** aparece junto do nome em todo lugar
-("Ten Cel Roberto Alves", "2º Ten Carlos Mendes").
+("Funcionário 1", "Funcionário 2").
 
 ## Perfis de acesso
 
