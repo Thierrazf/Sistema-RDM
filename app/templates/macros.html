@@ -40,6 +40,7 @@
 {% endmacro %}
 
 {% macro grafico_barras_horizontais(serie, rotulo_item='') %}
+  {% if serie %}
   {% set largura_grafico = 560 %}
   {% set largura_rotulos = 190 %}
   {% set largura_barras = 310 %}
@@ -55,13 +56,41 @@
             font-size="12" fill="#5b6c7f">{{ rotulo }}</text>
       <rect x="{{ largura_rotulos }}" y="{{ y }}" width="{{ largura_barra or 2 }}"
             height="21" rx="2" fill="{{ '#1f4a70' if valor else '#d3dae2' }}">
-        <title>{{ rotulo }}: {{ valor }} {{ rotulo_item }}</title>
+        <title>{{ rotulo }} — {{ valor }} {{ rotulo_item }}</title>
       </rect>
       <text x="{{ largura_rotulos + largura_barra + 7 }}" y="{{ y + 15 }}"
             font-family="IBM Plex Mono, Consolas, monospace" font-size="12"
             font-weight="600" fill="#0e1620">{{ valor }}</text>
     {% endfor %}
   </svg>
+  {% else %}
+  <p class="sem-dados">Sem registros para exibir</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro grafico_pizza(segmentos, titulo) %}
+  {% if segmentos %}
+  <div class="pizza-grafico">
+    <svg class="grafico-pizza-svg" viewBox="0 0 200 200" role="img"
+         aria-label="{{ titulo }}">
+      {% for segmento in segmentos %}
+      <path d="{{ segmento.caminho }}" fill="{{ segmento.cor }}">
+        <title>{{ segmento.rotulo }} — {{ segmento.valor }} ({{ segmento.percentual }}%)</title>
+      </path>
+      {% endfor %}
+    </svg>
+    <div class="pizza-legenda">
+      {% for segmento in segmentos %}
+      <div class="pizza-item">
+        <span class="pizza-cor" style="background: {{ segmento.cor }}"></span>
+        <span>{{ segmento.rotulo }} — {{ segmento.valor }} ({{ segmento.percentual }}%)</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <p class="sem-dados">Sem registros para calcular percentuais.</p>
+  {% endif %}
 {% endmacro %}
 
 

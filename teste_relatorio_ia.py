@@ -18,7 +18,7 @@ from app.services.relatorio_ia_service import (
     _url_publica_https,
     decifrar_api_key,
 )
-from app.services.pdf_service import gerar_pdf_relatorio_ia
+from app.services.pdf_service import _segmentos_pizza, gerar_pdf_relatorio_ia
 
 SENHA = "Janela@2026!ok"
 API_KEY = "sk-test-secret"
@@ -58,6 +58,14 @@ with app.app_context():
         )
     )
     db.session.add(
+        Crise(
+            titulo="Crise encerrada de teste",
+            problema="Registro encerrado para validar percentuais",
+            criticidade=Criticidade.BAIXA,
+            status="Fechada",
+        )
+    )
+    db.session.add(
         RDM(
             numero="RDM-2026-001",
             titulo="RDM de teste",
@@ -65,6 +73,31 @@ with app.app_context():
             plano_rollback="Teste",
             status=StatusRDM.ABERTA,
         )
+    )
+    db.session.add_all(
+        [
+            RDM(
+                numero="RDM-2026-002",
+                titulo="RDM fechada de teste",
+                solicitante_id=admin.id,
+                plano_rollback="Teste",
+                status=StatusRDM.FECHADA,
+            ),
+            RDM(
+                numero="RDM-2026-003",
+                titulo="RDM cancelada de teste",
+                solicitante_id=admin.id,
+                plano_rollback="Teste",
+                status=StatusRDM.CANCELADA,
+            ),
+            RDM(
+                numero="RDM-2026-004",
+                titulo="RDM executada de teste",
+                solicitante_id=admin.id,
+                plano_rollback="Teste",
+                status=StatusRDM.EXECUTADA,
+            ),
+        ]
     )
     db.session.commit()
 
@@ -170,17 +203,50 @@ with app.app_context():
     with patch("weasyprint.HTML", RenderizadorPDFFalso):
         pdf_teste = gerar_pdf_relatorio_ia(
             pdfs_gerados[-1][0],
-            pdfs_gerados[-1][1],
+            (
+                "### Resumo Executivo\n\n"
+                "Texto do **resumo** com <script>alert(1)</script>.\n\n"
+                "---\n\n"
+                "### Tendências\n"
+                "* **Concentração Temporal:** oito registros.\n"
+                "* Outro ponto observado."
+            ),
             pdfs_gerados[-1][2],
         )
 checar(
-    "template inclui análise sem recomendações e cinco gráficos SVG",
+    "PDF formata Markdown da análise com títulos e listas",
     pdf_teste.startswith(b"%PDF-")
-    and "Resumo gerencial de teste." in html_relatorio[-1]
-    and html_relatorio[-1].count("<svg") == 5
+    and '<h3 class="analise-titulo">Resumo Executivo</h3>' in html_relatorio[-1]
+    and "<strong>resumo</strong>" in html_relatorio[-1]
+    and "&lt;script&gt;alert(1)&lt;/script&gt;" in html_relatorio[-1]
+    and "<script>alert(1)</script>" not in html_relatorio[-1]
+    and "<ul>" in html_relatorio[-1]
+    and "###" not in html_relatorio[-1]
+    and "<hr" not in html_relatorio[-1],
+)
+checar(
+    "PDF preserva gráficos, inclui pizzas percentuais e títulos azul escuro",
+    html_relatorio[-1].count("<svg") == 7
     and html_relatorio[-1].count('class="grafico-barras-svg"') == 3
-    and "recomenda" not in html_relatorio[-1].lower()
+    and html_relatorio[-1].count('class="grafico-pizza-svg"') == 2
+    and "text-transform: uppercase; color: #0c2439; font-weight: bold" in html_relatorio[-1]
+    and "color: #0c2439" in html_relatorio[-1]
     and "Criticidade das crises abertas" in html_relatorio[-1],
+)
+checar(
+    "PDF apresenta percentuais e totais gerais segregados",
+    "Abertas — 1 (50.0%)" in html_relatorio[-1]
+    and "Fechadas — 1 (50.0%)" in html_relatorio[-1]
+    and "Abertas — 1 (25.0%)" in html_relatorio[-1]
+    and "Fechadas — 3 (75.0%)" in html_relatorio[-1]
+    and "Crises fechadas no histórico" in html_relatorio[-1]
+    and "RDMs abertas no histórico" in html_relatorio[-1]
+    and "RDMs fechadas no histórico" in html_relatorio[-1]
+    and "Sem dados" not in html_relatorio[-1],
+)
+checar(
+    "gráfico percentual sem amostra retorna sem fatias artificiais",
+    _segmentos_pizza([("Abertas", 0), ("Fechadas", 0)]) == [],
 )
 checar("requisição usa somente o endpoint OpenAI esperado",
        len(chamadas) == 1 and chamadas[0][0] ==

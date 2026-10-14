@@ -305,11 +305,22 @@ def gerar_relatorio_indicadores():
         .group_by(RDM.status)
         .all()
     }
+    total_crises = db.session.query(func.count(Crise.id)).scalar() or 0
+    crises_fechadas = db.session.query(func.count(Crise.id)).filter(
+        Crise.status == "Fechada"
+    ).scalar() or 0
+    total_rdms = db.session.query(func.count(RDM.id)).scalar() or 0
+    rdms_fechadas = db.session.query(func.count(RDM.id)).filter(
+        RDM.status.in_(
+            [StatusRDM.EXECUTADA, StatusRDM.CANCELADA, StatusRDM.FECHADA]
+        )
+    ).scalar() or 0
     metricas = {
         "ano_analisado": ano,
         "crises": {
-            "total_historico": db.session.query(func.count(Crise.id)).scalar() or 0,
+            "total_historico": total_crises,
             "abertas_atualmente": sum(crises_por_status_aberto.values()),
+            "fechadas_historico": crises_fechadas,
             "abertas_por_status": crises_por_status_aberto,
             "abertas_por_criticidade": crises_abertas_por_criticidade,
             "criadas_no_ano_por_mes": {
@@ -317,7 +328,9 @@ def gerar_relatorio_indicadores():
             },
         },
         "rdms": {
-            "total_historico": db.session.query(func.count(RDM.id)).scalar() or 0,
+            "total_historico": total_rdms,
+            "abertas_historico": total_rdms - rdms_fechadas,
+            "fechadas_historico": rdms_fechadas,
             "criadas_no_ano_por_mes": {
                 str(mes): rdms_por_mes.get(mes, 0) for mes in range(1, 13)
             },

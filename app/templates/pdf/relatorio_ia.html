@@ -14,7 +14,7 @@
     }
   }
   body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #0e1620; line-height: 1.45; }
-  h1 { font-size: 17pt; margin: 0 0 2mm; }
+  h1 { color: #0c2439; font-size: 17pt; font-weight: bold; margin: 0 0 2mm; }
   .sobre { font-family: monospace; font-size: 8pt; letter-spacing: 1.2px;
            text-transform: uppercase; color: #5b6c7f; }
   .cabecalho { border-bottom: 2pt solid #0c2439; padding-bottom: 4mm; margin-bottom: 5mm; }
@@ -24,11 +24,24 @@
   .indicadores .rotulo { color: #5b6c7f; font-size: 8pt; }
   .indicadores .valor { font-size: 17pt; font-weight: bold; }
   .secao { font-family: monospace; font-size: 8pt; letter-spacing: 1px;
-           text-transform: uppercase; color: #5b6c7f; border-bottom: 0.5pt solid #d3dae2;
-           padding-bottom: 1.5mm; margin: 6mm 0 3mm; }
+           text-transform: uppercase; color: #0c2439; font-weight: bold;
+           border-bottom: 0.5pt solid #d3dae2; padding-bottom: 1.5mm; margin: 6mm 0 3mm; }
+  .analise { overflow-wrap: anywhere; }
+  .analise p { margin: 0 0 3mm; }
+  .analise-titulo { color: #0c2439; font-size: 11pt; font-weight: bold;
+                    margin: 4mm 0 2mm; break-after: avoid; }
+  .analise ul { margin: 1mm 0 3mm; padding-left: 6mm; }
+  .analise li { margin: 0 0 1mm; }
+  .analise strong { color: #0c2439; font-weight: bold; }
   .grafico { text-align: center; margin: 2mm 0 4mm; }
   .grafico .grafico-svg { width: 100%; height: 48mm; }
   .grafico .grafico-barras-svg { width: 100%; height: auto; }
+  .pizza-grafico { display: flex; align-items: center; justify-content: center; gap: 10mm; margin: 3mm 0 5mm; }
+  .grafico-pizza-svg { width: 42mm; height: 42mm; }
+  .pizza-legenda { text-align: left; }
+  .pizza-item { display: flex; align-items: center; gap: 2mm; margin: 2mm 0; }
+  .pizza-cor { display: inline-block; width: 3mm; height: 3mm; }
+  .sem-dados { color: #5b6c7f; font-style: italic; }
   table.dados { width: 100%; border-collapse: collapse; }
   .dados th, .dados td { padding: 1.5mm 2mm; border-bottom: 0.4pt solid #eef2f6; text-align: left; }
   .dados th { color: #5b6c7f; font-size: 8pt; }
@@ -47,13 +60,26 @@
   <tr>
     <td><div class="rotulo">Crises abertas atualmente</div>
         <div class="valor">{{ metricas.crises.abertas_atualmente }}</div></td>
-    <td><div class="rotulo">RDMs criadas em {{ ano }}</div>
-        <div class="valor">{{ metricas.rdms.criadas_no_ano_por_mes.values()|sum }}</div></td>
+    <td><div class="rotulo">RDMs abertas no histórico</div>
+        <div class="valor">{{ metricas.rdms.abertas_historico }}</div></td>
+  </tr>
+</table>
+<table class="indicadores">
+  <tr>
+    <td><div class="rotulo">Crises fechadas no histórico</div>
+        <div class="valor">{{ metricas.crises.fechadas_historico }}</div></td>
+    <td><div class="rotulo">RDMs fechadas no histórico</div>
+        <div class="valor">{{ metricas.rdms.fechadas_historico }}</div></td>
   </tr>
 </table>
 
+<div class="secao">Situação geral das crises</div>
+<div class="grafico">{{ m.grafico_pizza(pizza_crises, 'Crises abertas e fechadas') }}</div>
+<div class="secao">Situação geral das RDMs</div>
+<div class="grafico">{{ m.grafico_pizza(pizza_rdms, 'RDMs abertas e fechadas') }}</div>
+
 <div class="secao">Resumo e tendências da IA</div>
-<div class="analise">{{ relatorio }}</div>
+<div class="analise">{{ relatorio_formatado }}</div>
 
 <div class="secao">Crises criadas por mês</div>
 <div class="grafico">{{ m.grafico_colunas(serie_crises, rotulo_item='Crise(s)') }}</div>
@@ -65,7 +91,7 @@
   {% for status, total in metricas.crises.abertas_por_status.items() %}
     <tr><td>{{ status }}</td><td>{{ total }}</td></tr>
   {% else %}
-    <tr><td colspan="2">Nenhuma crise aberta.</td></tr>
+    <tr><td colspan="2">Nenhuma crise aberta</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -77,7 +103,7 @@
   {% for criticidade, total in metricas.crises.abertas_por_criticidade.items() %}
     <tr><td>{{ criticidade }}</td><td>{{ total }}</td></tr>
   {% else %}
-    <tr><td colspan="2">Nenhuma crise aberta.</td></tr>
+    <tr><td colspan="2">Nenhuma crise aberta</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -92,7 +118,7 @@
   {% for status, total in metricas.rdms.situacao_no_ano.items() %}
     <tr><td>{{ status }}</td><td>{{ total }}</td></tr>
   {% else %}
-    <tr><td colspan="2">Nenhuma RDM criada no ano.</td></tr>
+    <tr><td colspan="2">Nenhuma RDM criada no ano</td></tr>
   {% endfor %}
   </tbody>
 </table>
