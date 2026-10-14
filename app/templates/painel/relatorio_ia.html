@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}Relatório gerencial {{ ano }}{% endblock %}
+{% block sobretitulo %}Indicadores · {{ ano }}{% endblock %}
+{% block cabecalho %}Relatório gerencial por IA{% endblock %}
+{% block acoes %}
+  <a href="{{ url_for('painel.indicadores', ano=ano) }}" class="botao">Voltar aos indicadores</a>
+{% endblock %}
+{% block conteudo %}
+<div class="cartao">
+  <div class="cartao-topo">
+    <h2 class="cartao-titulo">Análise de crises e RDMs — {{ ano }}</h2>
+    <span class="pequeno silencioso">Gerado pela OpenAI a partir de métricas agregadas</span>
+  </div>
+  <div class="cartao-corpo" style="white-space:pre-wrap;">{{ relatorio }}</div>
+</div>
+{% endblock %}

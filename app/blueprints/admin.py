@@ -1,10 +1,11 @@
+import re
 import secrets
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..extensions import db
-from ..models import CatalogoAtividade, Equipe, LogAcesso, Perfil, User
+from ..models import CatalogoAtividade, ConfiguracaoIA, Equipe, LogAcesso, Perfil, User
 from ..security import (
     admin_requerido,
     dominio_autorizado,
@@ -12,6 +13,7 @@ from ..security import (
     registrar_acesso,
     validar_senha,
 )
+from ..services.relatorio_ia_service import cifrar_api_key
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -252,3 +254,77 @@ def auditoria():
         error_out=False,
     )
     return render_template("admin/auditoria.html", paginacao=paginacao)
+
+
+# ----------------------------------------------------------- integração OpenAI
+@admin_bp.route("/relatorios-ia", methods=["GET", "POST"])
+@login_required
+@admin_requerido
+def configuracao_relatorios_ia():
+    configuracao = db.session.get(ConfiguracaoIA, 1)
+    if not configuracao:
+        configuracao = ConfiguracaoIA(id=1, provedor="openai", modelo="gpt-4o-mini")
+
+    if request.method == "POST":
+        provedor = (request.form.get("provedor") or "").strip().lower()
+        modelo = (request.form.get("modelo") or "").strip()
+        url_compativel = (request.form.get("url_compativel") or "").strip()
+        api_key = (request.form.get("api_key") or "").strip()
+        erros = []
+        provedores = {"openai", "anthropic", "gemini", "openai_compatible"}
+        if provedor not in provedores:
+            erros.append("Selecione um provedor de IA suportado.")
+        if not re.fullmatch(r"[A-Za-z0-9._-]{1,100}", modelo):
+            erros.append("Informe um identificador de modelo válido.")
+        if provedor == "openai_compatible":
+            if (
+                len(url_compativel) > 500
+                or not re.fullmatch(r"https://[^/\s?#]+(?:/[^?#\s]*)?", url_compativel)
+            ):
+                erros.append("Informe uma URL base HTTPS válida para a API compatível.")
+        else:
+            url_compativel = ""
+        if len(api_key) > 500:
+            erros.append("A chave da API excede o tamanho permitido.")
+        if (
+            provedor != configuracao.provedor
+            and request.form.get("remover_api_key") != "on"
+            and not api_key
+        ):
+            erros.append("Informe a chave do novo provedor ao alterar a integração.")
+        if request.form.get("remover_api_key") != "on" and not (
+            configuracao.api_key_cifrada or api_key
+        ):
+            erros.append("Informe a chave do provedor selecionado para habilitar os relatórios.")
+
+        if erros:
+            for erro in erros:
+                flash(erro, "danger")
+            return render_template(
+                "admin/relatorios_ia.html",
+                configuracao=configuracao,
+                chave_configurada=bool(configuracao.api_key_cifrada),
+            ), 400
+
+        configuracao.provedor = provedor
+        configuracao.modelo = modelo
+        configuracao.url_compativel = url_compativel or None
+        if request.form.get("remover_api_key") == "on":
+            configuracao.api_key_cifrada = None
+        elif api_key:
+            configuracao.api_key_cifrada = cifrar_api_key(api_key)
+        db.session.add(configuracao)
+        db.session.commit()
+        registrar_acesso(
+            "CONFIGURACAO_IA",
+            usuario_id=current_user.id,
+            detalhe="Configuração da integração de relatórios atualizada.",
+        )
+        flash("Configuração dos relatórios por IA atualizada.", "success")
+        return redirect(url_for("admin.configuracao_relatorios_ia"))
+
+    return render_template(
+        "admin/relatorios_ia.html",
+        configuracao=configuracao,
+        chave_configurada=bool(configuracao.api_key_cifrada),
+    )

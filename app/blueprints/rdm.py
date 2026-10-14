@@ -415,6 +415,14 @@ def status_atividade(rdm_id, atividade_id):
     atividade = db.session.get(Atividade, atividade_id)
     if not atividade or atividade.rdm_id != rdm.id:
         abort(404)
+    if not (
+        current_user.is_gestor
+        or rdm.solicitante_id == current_user.id
+        or atividade.analista_id == current_user.id
+    ):
+        abort(403)
+    if rdm.status not in (StatusRDM.APROVADA, StatusRDM.EXECUTADA):
+        abort(403)
 
     novo = _enum_ou_none(StatusAtividade, request.form.get("status"))
     if not novo:

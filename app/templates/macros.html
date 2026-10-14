@@ -39,6 +39,31 @@
   </div>
 {% endmacro %}
 
+{% macro grafico_barras_horizontais(serie, rotulo_item='') %}
+  {% set largura_grafico = 560 %}
+  {% set largura_rotulos = 190 %}
+  {% set largura_barras = 310 %}
+  {% set altura_linha = 34 %}
+  {% set total_altura = serie|length * altura_linha + 8 %}
+  {% set maximo = (serie | map(attribute=1) | max) or 1 %}
+  <svg class="grafico-barras-svg" viewBox="0 0 {{ largura_grafico }} {{ total_altura }}"
+       role="img" aria-label="Gráfico de barras">
+    {% for rotulo, valor in serie %}
+      {% set y = loop.index0 * altura_linha + 5 %}
+      {% set largura_barra = (valor / maximo * largura_barras) | round(1) if valor else 0 %}
+      <text x="0" y="{{ y + 15 }}" font-family="Helvetica, Arial, sans-serif"
+            font-size="12" fill="#5b6c7f">{{ rotulo }}</text>
+      <rect x="{{ largura_rotulos }}" y="{{ y }}" width="{{ largura_barra or 2 }}"
+            height="21" rx="2" fill="{{ '#1f4a70' if valor else '#d3dae2' }}">
+        <title>{{ rotulo }}: {{ valor }} {{ rotulo_item }}</title>
+      </rect>
+      <text x="{{ largura_rotulos + largura_barra + 7 }}" y="{{ y + 15 }}"
+            font-family="IBM Plex Mono, Consolas, monospace" font-size="12"
+            font-weight="600" fill="#0e1620">{{ valor }}</text>
+    {% endfor %}
+  </svg>
+{% endmacro %}
+
 
 {% macro etiqueta_status(status) %}
   {% set mapa = {

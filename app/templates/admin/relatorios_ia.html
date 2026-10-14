@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block titulo %}Relatórios por IA{% endblock %}
+{% block sobretitulo %}Administração{% endblock %}
+{% block cabecalho %}Configuração de IA{% endblock %}
+{% block conteudo %}
+
+<div class="cartao">
+  <div class="cartao-topo"><h2 class="cartao-titulo">Integração para análise gerencial</h2></div>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="cartao-corpo">
+      <p class="pequeno silencioso" style="margin-top:0;">
+        A chave é armazenada criptografada e nunca é exibida depois de salva.
+        A criptografia depende da SECRET_KEY do sistema; mantenha-a estável
+        para preservar o acesso à chave configurada.
+      </p>
+
+      <div class="campo">
+        <label for="provedor">Provedor de IA</label>
+        <select id="provedor" name="provedor" required>
+          <option value="openai" {{ 'selected' if configuracao.provedor == 'openai' }}>OpenAI / GPT</option>
+          <option value="anthropic" {{ 'selected' if configuracao.provedor == 'anthropic' }}>Anthropic / Claude</option>
+          <option value="gemini" {{ 'selected' if configuracao.provedor == 'gemini' }}>Google / Gemini</option>
+          <option value="openai_compatible" {{ 'selected' if configuracao.provedor == 'openai_compatible' }}>Outra API compatível com OpenAI</option>
+        </select>
+        <div class="ajuda">Para outros fornecedores, selecione API compatível com OpenAI.</div>
+      </div>
+
+      <div class="campo" id="campo-url-compativel">
+        <label for="url_compativel">URL base HTTPS da API compatível</label>
+        <input type="url" id="url_compativel" name="url_compativel" maxlength="500"
+               value="{{ configuracao.url_compativel or '' }}"
+               placeholder="https://api.exemplo.com/v1">
+        <div class="ajuda">O sistema acrescenta /chat/completions. Apenas endpoints HTTPS públicos são aceitos.</div>
+      </div>
+
+      <div class="campo">
+        <label for="api_key">Chave da API do provedor selecionado</label>
+        <input type="password" id="api_key" name="api_key" maxlength="500"
+               autocomplete="new-password" placeholder="{{ 'Configurada — deixe vazio para manter' if chave_configurada else 'Cole sua chave da API' }}">
+        <div class="ajuda">
+          {% if chave_configurada %}
+            Já existe uma chave configurada. Para substituí-la, informe uma nova.
+          {% else %}
+            A chave será enviada apenas ao provedor selecionado ao gerar um relatório.
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="modelo">Identificador do modelo</label>
+        <input type="text" id="modelo" name="modelo" maxlength="100" required
+               value="{{ configuracao.modelo or 'gpt-4o-mini' }}" placeholder="gpt-4o-mini / claude-3-5-sonnet-latest / gemini-3.8-flash">
+      </div>
+
+      {% if chave_configurada %}
+      <div class="marcador" style="margin-bottom:18px;">
+        <input type="checkbox" id="remover_api_key" name="remover_api_key">
+        <label for="remover_api_key">Remover a chave salva e desabilitar relatórios por IA</label>
+      </div>
+      {% endif %}
+
+      <button type="submit" class="botao botao-primario">Salvar configuração</button>
+    </div>
+  </form>
+</div>
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/relatorios_ia.js') }}" defer></script>
+{% endblock %}
+{% endblock %}

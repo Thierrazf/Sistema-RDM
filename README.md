@@ -21,6 +21,8 @@ Substitui o fluxo em Word + PDF com disparo manual.
   pré-visualização do que será recebido, destinatários sugeridos a partir dos
   analistas das atividades, e PDF em anexo.
 - **Crises** — registro, linha do tempo e comunicado.
+- **Relatórios gerenciais por IA** — análise de tendências de crises e RDMs
+  baseada em indicadores agregados.
 - **Trilha de acesso** — login, falha, bloqueio, logout e reset com IP e
   user-agent, para atender auditoria.
 
@@ -62,10 +64,23 @@ flask carregar-catalogo         # 21 atividades padrão das 4 equipes
 Suba a aplicação:
 
 ```bash
-flask run --debug
+flask --app wsgi run --debug
 ```
 
 Acesse `http://127.0.0.1:5000`.
+
+### Relatórios gerenciais por IA
+
+Um administrador configura provedor, chave e modelo em
+**Administração → Relatórios por IA**. Há suporte nativo a OpenAI/GPT,
+Anthropic/Claude e Google/Gemini, além de endpoints públicos HTTPS compatíveis
+com OpenAI Chat Completions (por exemplo, provedores que implementem esse
+formato). Ao trocar de provedor, informe a chave correspondente. A chave fica
+cifrada no banco usando `SECRET_KEY`; mantenha esse segredo estável para
+preservar a configuração. Na página **Indicadores**, usuários autenticados
+podem gerar até cinco relatórios por hora. A chamada envia somente totais
+agregados por período, status e criticidade — nunca títulos, descrições de
+crises ou dados pessoais.
 
 ### WeasyPrint no Windows
 
@@ -169,6 +184,7 @@ python teste_fluxo.py     # login, RDM, encerramento, permissões, usuários
 python teste_email.py     # escolha do mecanismo, Graph API, tratamento de falhas
 python teste_telas.py     # abre todas as telas e falha se alguma quebrar
 python teste_seguranca.py # hash de senha, cabeçalhos, CSRF, controle de acesso
+python teste_relatorio_ia.py # configuração cifrada e análise sem dados pessoais
 python teste_pdf.py       # gera instance/pdfs/RDM-2026-001.pdf
 ```
 

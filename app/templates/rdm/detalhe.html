@@ -86,7 +86,9 @@
             {{ m.etiqueta_atividade(a.status) }}
           </div>
 
-          {% if rdm.status.name in ['APROVADA', 'EXECUTADA'] %}
+          {% if rdm.status.name in ['APROVADA', 'EXECUTADA']
+                and (current_user.is_gestor or current_user.id == rdm.solicitante_id
+                     or current_user.id == a.analista_id) %}
           <form method="post" style="display:flex; gap:6px; margin-top:8px;"
                 action="{{ url_for('rdm.status_atividade', rdm_id=rdm.id, atividade_id=a.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

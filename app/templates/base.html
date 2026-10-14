@@ -37,6 +37,8 @@
          class="{{ 'ativo' if request.endpoint.startswith('admin.usuario') }}">Usuários</a>
       <a href="{{ url_for('admin.catalogo') }}"
          class="{{ 'ativo' if request.endpoint.startswith('admin.catalogo') }}">Catálogo de atividades</a>
+      <a href="{{ url_for('admin.configuracao_relatorios_ia') }}"
+         class="{{ 'ativo' if request.endpoint == 'admin.configuracao_relatorios_ia' }}">Relatórios por IA</a>
       <a href="{{ url_for('admin.auditoria') }}"
          class="{{ 'ativo' if request.endpoint == 'admin.auditoria' }}">Trilha de acesso</a>
       {% endif %}

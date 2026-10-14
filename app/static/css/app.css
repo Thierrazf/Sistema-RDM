@@ -215,6 +215,7 @@ a:hover { text-decoration: underline; }
 .topo-acoes { display: flex; gap: 8px; flex-shrink: 0; }
 
 .pagina { padding: 30px 38px 68px; max-width: 1400px; width: 100%; }
+.pagina:has(.grade-email) { max-width: 1800px; margin-inline: auto; }
 
 /* =================================================================
    Blocos
@@ -250,8 +251,10 @@ a:hover { text-decoration: underline; }
 .grade-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grade-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .grade-email {
-  grid-template-columns: minmax(320px, 0.95fr) minmax(420px, 1.8fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+.grade-email > div { display: flex; min-width: 0; }
+.grade-email .cartao { width: 100%; margin-bottom: 0; }
 
 /* indicadores */
 .indicador {
@@ -695,13 +698,13 @@ input::placeholder, textarea::placeholder { color: var(--aco-claro); }
   border-radius: var(--raio);
   background: #f4f6f9;
   padding: 16px;
-  min-height: 820px;
+  min-height: 920px;
 }
 .moldura-email iframe {
   display: block;
   width: 100%;
-  height: 820px;
-  min-height: 820px;
+  height: 920px;
+  min-height: 920px;
   border: 1px solid var(--linha);
   border-radius: 3px;
   background: #fff;
@@ -714,6 +717,10 @@ input::placeholder, textarea::placeholder { color: var(--aco-claro); }
   .grade-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grade-3, .grade-2, .grade-email { grid-template-columns: minmax(0, 1fr); }
   .linha-3, .linha-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1220px) {
+  .grade-email { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 860px) {

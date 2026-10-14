@@ -41,6 +41,11 @@ with app.app_context():
     )
     analista.definir_senha(SENHA)
 
+    outro_usuario = User(
+        nome="Outro usuário", email="outro@exemplo.com.br", perfil=Perfil.ANALISTA,
+    )
+    outro_usuario.definir_senha(SENHA)
+
     autoridade = User(
         nome="Roberto Alves", cargo="Ten Cel",
         email="roberto.alves@exemplo.com.br", perfil=Perfil.GESTOR,
@@ -48,7 +53,7 @@ with app.app_context():
     )
     autoridade.definir_senha(SENHA)
 
-    db.session.add_all([admin, analista, autoridade])
+    db.session.add_all([admin, analista, autoridade, outro_usuario])
     db.session.add(
         CatalogoAtividade(equipe=Equipe.BANCO_DADOS, descricao="Backup full", duracao_min=40)
     )
@@ -75,6 +80,7 @@ with app.app_context():
     db.session.commit()
 
     rdm_id, crise_id, analista_id = rdm.id, crise.id, analista.id
+    atividade_id = rdm.atividades[0].id
 
 cliente = app.test_client()
 cliente.post("/login", data={"email": "fernanda.lopes@exemplo.com.br", "senha": SENHA})
@@ -108,11 +114,46 @@ abrir("/crises/nova")
 abrir(f"/crises/{crise_id}")
 abrir("/indicadores")
 
+print("\nPermissão para atualizar atividade")
+with app.app_context():
+    rdm = db.session.get(RDM, rdm_id)
+    rdm.status = StatusRDM.APROVADA
+    db.session.commit()
+
+cliente.get("/logout")
+cliente.post("/login", data={"email": "outro@exemplo.com.br", "senha": SENHA})
+resposta = cliente.post(
+    f"/rdm/{rdm_id}/atividade/{atividade_id}/status",
+    data={"status": "EXECUTADA", "observacao": "Alteração não autorizada"},
+)
+if resposta.status_code != 403:
+    falhas.append(f"usuário sem vínculo com a RDM -> HTTP {resposta.status_code}, esperado 403")
+print(f"  {'ok   ' if resposta.status_code == 403 else 'FALHA'}  bloqueia usuário sem vínculo [{resposta.status_code}]")
+
+cliente.get("/logout")
+cliente.post("/login", data={"email": "ana@exemplo.com.br", "senha": SENHA})
+resposta = cliente.post(
+    f"/rdm/{rdm_id}/atividade/{atividade_id}/status",
+    data={"status": "EXECUTADA", "observacao": "Execução validada"},
+)
+if resposta.status_code != 302:
+    falhas.append(f"analista responsável -> HTTP {resposta.status_code}, esperado 302")
+print(f"  {'ok   ' if resposta.status_code == 302 else 'FALHA'}  permite analista responsável [{resposta.status_code}]")
+
+with app.app_context():
+    atividade = db.session.get(Atividade, atividade_id)
+    if atividade.status.name != "EXECUTADA" or atividade.observacao != "Execução validada":
+        falhas.append("analista responsável não atualizou o status da atividade")
+
+cliente.get("/logout")
+cliente.post("/login", data={"email": "fernanda.lopes@exemplo.com.br", "senha": SENHA})
+
 print("\nAdministração")
 abrir("/admin/usuarios")
 abrir("/admin/usuarios/novo")
 abrir(f"/admin/usuarios/{analista_id}/editar")
 abrir("/admin/catalogo")
+abrir("/admin/relatorios-ia")
 abrir("/admin/auditoria")
 
 print("\nConta e acesso")

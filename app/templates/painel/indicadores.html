@@ -19,6 +19,23 @@
 
 {% block conteudo %}
 
+<div class="cartao">
+  <div class="cartao-corpo" style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+    <div>
+      <h2 class="cartao-titulo">Análise gerencial por IA</h2>
+      <p class="pequeno silencioso" style="margin:6px 0 0;">
+        Gere e baixe um PDF com tendências, recomendações, métricas e gráficos,
+        usando apenas dados agregados, sem nomes ou descrições das crises.
+      </p>
+    </div>
+    <form method="post" action="{{ url_for('painel.gerar_relatorio_indicadores') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="ano" value="{{ ano }}">
+      <button type="submit" class="botao botao-primario">Gerar e baixar PDF</button>
+    </form>
+  </div>
+</div>
+
 <div class="grade grade-3" style="margin-bottom:18px;">
   <div class="indicador">
     <div class="indicador-rotulo">RDMs em {{ ano }}</div>

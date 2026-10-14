@@ -1,0 +1,100 @@
+{% import "macros.html" as m %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>Relatório gerencial {{ ano }}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 14mm 18mm;
+    @bottom-center {
+      content: "Relatório gerencial {{ ano }} · página " counter(page) " de " counter(pages);
+      font-family: monospace; font-size: 8pt; color: #5b6c7f;
+    }
+  }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #0e1620; line-height: 1.45; }
+  h1 { font-size: 17pt; margin: 0 0 2mm; }
+  .sobre { font-family: monospace; font-size: 8pt; letter-spacing: 1.2px;
+           text-transform: uppercase; color: #5b6c7f; }
+  .cabecalho { border-bottom: 2pt solid #0c2439; padding-bottom: 4mm; margin-bottom: 5mm; }
+  .emitido { color: #5b6c7f; font-size: 8pt; }
+  .indicadores { width: 100%; border-collapse: separate; border-spacing: 3mm 0; margin: 4mm 0 6mm; }
+  .indicadores td { width: 50%; border: 0.5pt solid #d3dae2; padding: 3mm; }
+  .indicadores .rotulo { color: #5b6c7f; font-size: 8pt; }
+  .indicadores .valor { font-size: 17pt; font-weight: bold; }
+  .secao { font-family: monospace; font-size: 8pt; letter-spacing: 1px;
+           text-transform: uppercase; color: #5b6c7f; border-bottom: 0.5pt solid #d3dae2;
+           padding-bottom: 1.5mm; margin: 6mm 0 3mm; }
+  .grafico { text-align: center; margin: 2mm 0 4mm; }
+  .grafico .grafico-svg { width: 100%; height: 48mm; }
+  .grafico .grafico-barras-svg { width: 100%; height: auto; }
+  table.dados { width: 100%; border-collapse: collapse; }
+  .dados th, .dados td { padding: 1.5mm 2mm; border-bottom: 0.4pt solid #eef2f6; text-align: left; }
+  .dados th { color: #5b6c7f; font-size: 8pt; }
+  .analise { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .legenda { color: #5b6c7f; font-size: 8pt; margin-top: 1mm; }
+</style>
+</head>
+<body>
+<div class="cabecalho">
+  <div class="sobre">Análise gerencial por inteligência artificial</div>
+  <h1>Crises e RDMs — {{ ano }}</h1>
+  <div class="emitido">Emitido em {{ emitido_em }} · análise baseada em métricas agregadas</div>
+</div>
+
+<table class="indicadores">
+  <tr>
+    <td><div class="rotulo">Crises abertas atualmente</div>
+        <div class="valor">{{ metricas.crises.abertas_atualmente }}</div></td>
+    <td><div class="rotulo">RDMs criadas em {{ ano }}</div>
+        <div class="valor">{{ metricas.rdms.criadas_no_ano_por_mes.values()|sum }}</div></td>
+  </tr>
+</table>
+
+<div class="secao">Resumo e tendências da IA</div>
+<div class="analise">{{ relatorio }}</div>
+
+<div class="secao">Crises criadas por mês</div>
+<div class="grafico">{{ m.grafico_colunas(serie_crises, rotulo_item='Crise(s)') }}</div>
+<div class="secao">Crises abertas por situação</div>
+<div class="grafico">{{ m.grafico_barras_horizontais(serie_crises_status, rotulo_item='crise(s)') }}</div>
+<table class="dados">
+  <thead><tr><th>Situação das crises abertas</th><th>Quantidade</th></tr></thead>
+  <tbody>
+  {% for status, total in metricas.crises.abertas_por_status.items() %}
+    <tr><td>{{ status }}</td><td>{{ total }}</td></tr>
+  {% else %}
+    <tr><td colspan="2">Nenhuma crise aberta.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<div class="secao">Crises abertas por criticidade</div>
+<div class="grafico">{{ m.grafico_barras_horizontais(serie_crises_criticidade, rotulo_item='crise(s)') }}</div>
+<table class="dados">
+  <thead><tr><th>Criticidade das crises abertas</th><th>Quantidade</th></tr></thead>
+  <tbody>
+  {% for criticidade, total in metricas.crises.abertas_por_criticidade.items() %}
+    <tr><td>{{ criticidade }}</td><td>{{ total }}</td></tr>
+  {% else %}
+    <tr><td colspan="2">Nenhuma crise aberta.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div class="secao">RDMs criadas por mês</div>
+<div class="grafico">{{ m.grafico_colunas(serie_rdms) }}</div>
+<div class="secao">RDMs por situação em {{ ano }}</div>
+<div class="grafico">{{ m.grafico_barras_horizontais(serie_rdms_status, rotulo_item='RDM(s)') }}</div>
+<table class="dados">
+  <thead><tr><th>Situação das RDMs criadas em {{ ano }}</th><th>Quantidade</th></tr></thead>
+  <tbody>
+  {% for status, total in metricas.rdms.situacao_no_ano.items() %}
+    <tr><td>{{ status }}</td><td>{{ total }}</td></tr>
+  {% else %}
+    <tr><td colspan="2">Nenhuma RDM criada no ano.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</body>
+</html>

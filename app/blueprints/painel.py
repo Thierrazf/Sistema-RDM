@@ -1,11 +1,35 @@
 from datetime import datetime, timedelta
+from io import BytesIO
 
-from flask import Blueprint, render_template, request
+from flask import (
+    Blueprint,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    url_for,
+)
 from flask_login import login_required
 from sqlalchemy import extract, func
 
-from ..extensions import db
-from ..models import RDM, Atividade, Crise, Criticidade, Equipe, StatusRDM, User
+from ..extensions import db, limiter
+from ..models import (
+    RDM,
+    Atividade,
+    ConfiguracaoIA,
+    Crise,
+    Criticidade,
+    Equipe,
+    StatusRDM,
+    User,
+)
+from ..services.pdf_service import gerar_pdf_relatorio_ia
+from ..services.relatorio_ia_service import (
+    ErroConfiguracaoIA,
+    ErroRelatorioIA,
+    gerar_relatorio,
+)
 
 painel_bp = Blueprint("painel", __name__)
 
@@ -228,4 +252,94 @@ def indicadores():
         total_geral=sum(por_ano.values()),
         total_crises_ano=sum(contagem_mes_crise.values()),
         total_crises_geral=sum(por_ano_crise.values()),
+    )
+
+
+@painel_bp.route("/indicadores/relatorio-ia", methods=["POST"])
+@login_required
+@limiter.limit("5 per hour")
+def gerar_relatorio_indicadores():
+    ano = request.form.get("ano", type=int) or datetime.now().year
+    configuracao = db.session.get(ConfiguracaoIA, 1)
+    if not configuracao or not configuracao.api_key_cifrada:
+        flash("A integração de IA ainda não foi configurada pelo administrador.", "warning")
+        return redirect(url_for("painel.indicadores", ano=ano))
+
+    crises_por_status_aberto = dict(
+        db.session.query(Crise.status, func.count(Crise.id))
+        .filter(Crise.status != "Fechada")
+        .group_by(Crise.status)
+        .all()
+    )
+    crises_abertas_por_criticidade = {
+        criticidade.value if criticidade else "Não informada": total
+        for criticidade, total in db.session.query(Crise.criticidade, func.count(Crise.id))
+        .filter(Crise.status != "Fechada")
+        .group_by(Crise.criticidade)
+        .all()
+    }
+    crises_por_mes = {
+        int(mes): total
+        for mes, total in db.session.query(
+            extract("month", Crise.criado_em), func.count(Crise.id)
+        )
+        .filter(extract("year", Crise.criado_em) == ano)
+        .group_by(extract("month", Crise.criado_em))
+        .all()
+        if mes
+    }
+    rdms_por_mes = {
+        int(mes): total
+        for mes, total in db.session.query(
+            extract("month", RDM.criado_em), func.count(RDM.id)
+        )
+        .filter(extract("year", RDM.criado_em) == ano)
+        .group_by(extract("month", RDM.criado_em))
+        .all()
+        if mes
+    }
+    rdms_por_status = {
+        status.value: total
+        for status, total in db.session.query(RDM.status, func.count(RDM.id))
+        .filter(extract("year", RDM.criado_em) == ano)
+        .group_by(RDM.status)
+        .all()
+    }
+    metricas = {
+        "ano_analisado": ano,
+        "crises": {
+            "total_historico": db.session.query(func.count(Crise.id)).scalar() or 0,
+            "abertas_atualmente": sum(crises_por_status_aberto.values()),
+            "abertas_por_status": crises_por_status_aberto,
+            "abertas_por_criticidade": crises_abertas_por_criticidade,
+            "criadas_no_ano_por_mes": {
+                str(mes): crises_por_mes.get(mes, 0) for mes in range(1, 13)
+            },
+        },
+        "rdms": {
+            "total_historico": db.session.query(func.count(RDM.id)).scalar() or 0,
+            "criadas_no_ano_por_mes": {
+                str(mes): rdms_por_mes.get(mes, 0) for mes in range(1, 13)
+            },
+            "situacao_no_ano": rdms_por_status,
+        },
+    }
+
+    try:
+        relatorio = gerar_relatorio(configuracao, metricas)
+    except (ErroConfiguracaoIA, ErroRelatorioIA) as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("painel.indicadores", ano=ano))
+
+    try:
+        pdf = gerar_pdf_relatorio_ia(ano, relatorio, metricas)
+    except Exception as exc:  # noqa: BLE001
+        flash(f"A análise foi gerada, mas não foi possível criar o PDF: {exc}", "danger")
+        return redirect(url_for("painel.indicadores", ano=ano))
+
+    return send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"relatorio-gerencial-{ano}.pdf",
     )

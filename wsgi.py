@@ -4,9 +4,11 @@ Desenvolvimento:  flask --app wsgi run --debug
 Produção:         gunicorn -w 4 -b 0.0.0.0:8000 wsgi:app
 """
 
+import os
+
 from app import create_app
 
-app = create_app("production")
+app = create_app(os.getenv("FLASK_ENV") or "development")
 
 if __name__ == "__main__":
     # Nunca use debug=True em produção — use gunicorn atrás de um proxy HTTPS.

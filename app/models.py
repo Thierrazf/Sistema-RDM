@@ -411,6 +411,18 @@ class CatalogoAtividade(db.Model):
     ativo = db.Column(db.Boolean, default=True, nullable=False)
 
 
+class ConfiguracaoIA(db.Model):
+    """Credenciais e parâmetros do provedor de IA, configurados por administrador."""
+
+    __tablename__ = "configuracao_ia"
+
+    id = db.Column(db.Integer, primary_key=True)
+    api_key_cifrada = db.Column(db.Text)
+    provedor = db.Column(db.String(30), nullable=False, default="openai")
+    modelo = db.Column(db.String(100), nullable=False, default="gpt-4o-mini")
+    url_compativel = db.Column(db.String(500))
+
+
 class LogRDM(db.Model):
     __tablename__ = "log_rdm"
 
