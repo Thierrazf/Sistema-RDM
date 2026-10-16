@@ -11,5 +11,6 @@ WeasyPrint>=66
 email-validator==2.2.0
 gunicorn==23.0.0
 psycopg[binary]>=3.2.10   # driver PostgreSQL (apenas produção)
+redis>=5.0                 # armazenamento do rate limit (Flask-Limiter) em produção
 requests>=2.32
 cryptography>=43.0
