@@ -231,33 +231,44 @@ def _registrar_comandos(app: Flask) -> None:
             raise SystemExit(1)
 
     @app.cli.command("carregar-pessoas")
-    def carregar_pessoas():
+    @click.option("--arquivo", default="pessoas.csv", show_default=True,
+                  help="CSV com as colunas nome;cargo;email;perfil;equipe.")
+    def carregar_pessoas(arquivo):
         """Cadastra as pessoas que aparecem nos seletores da RDM.
 
         Cria como 'somente referência': aparecem como solicitante, revisor ou
         autorizador, mas não acessam o sistema. Para dar acesso a alguma delas,
         edite em Administração > Usuários e defina uma senha.
+
+        A lista fica fora do repositório (pessoas.csv está no .gitignore);
+        use pessoas.example.csv como modelo.
         """
-        # (nome, cargo, e-mail, perfil, equipe)
+        import csv
+
         # Cargo curto aparece antes do nome nos documentos ("Ten Cel Fulano").
-        # Para os analistas o cargo fica vazio: a equipe já identifica a área,
+        # Para os analistas deixe o cargo vazio: a equipe já identifica a área,
         # e o título completo prefixando o nome ficaria ilegível no e-mail.
-        pessoas = [
-            ("Carlos Mendes", "2º Ten", "carlos.mendes@exemplo.com.br",
-             Perfil.GESTOR, None),
-            ("Roberto Alves", "Ten Cel", "roberto.alves@exemplo.com.br",
-             Perfil.GESTOR, None),
-            ("Paulo Ribeiro", "", "paulo.ribeiro@exemplo.com.br",
-             Perfil.ANALISTA, Equipe.INFRAESTRUTURA),
-            ("Marcos Teixeira", "", "marcos.teixeira@exemplo.com.br",
-             Perfil.ANALISTA, Equipe.INFRAESTRUTURA),
-            ("Bruno Lima", "", "bruno.lima@exemplo.com.br",
-             Perfil.ANALISTA, Equipe.BACKEND),
-            ("Ana Souza", "", "ana.souza@exemplo.com.br",
-             Perfil.ANALISTA, Equipe.FRONTEND),
-            ("João Pereira", "", "joao.pereira@exemplo.com.br",
-             Perfil.ANALISTA, Equipe.BANCO_DADOS),
-        ]
+        if not os.path.exists(arquivo):
+            raise click.ClickException(
+                f"Arquivo {arquivo} não encontrado. Copie pessoas.example.csv "
+                "para pessoas.csv e preencha com as pessoas da organização."
+            )
+        pessoas = []
+        with open(arquivo, encoding="utf-8-sig", newline="") as f:
+            for n, linha in enumerate(csv.DictReader(f, delimiter=";"), start=2):
+                try:
+                    perfil = Perfil[(linha.get("perfil") or "").strip().upper()]
+                    equipe_txt = (linha.get("equipe") or "").strip().upper()
+                    equipe = Equipe[equipe_txt] if equipe_txt else None
+                except KeyError as exc:
+                    raise click.ClickException(f"Linha {n}: valor inválido {exc}")
+                pessoas.append((
+                    (linha.get("nome") or "").strip(),
+                    (linha.get("cargo") or "").strip(),
+                    (linha.get("email") or "").strip().lower(),
+                    perfil,
+                    equipe,
+                ))
         criados = 0
         for nome, cargo, email, perfil, equipe in pessoas:
             if db.session.query(User).filter_by(email=email).first():

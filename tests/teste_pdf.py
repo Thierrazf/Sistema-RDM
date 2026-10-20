@@ -70,8 +70,8 @@ with app.app_context():
 
     assunto, html, texto = montar_email_rdm(rdm)
     print(f"Assunto: {assunto}")
-    with open("/home/claude/preview_email.html", "w", encoding="utf-8") as f:
+    with open("instance/pdfs/preview_email.html", "w", encoding="utf-8") as f:
         f.write(html)
-    with open("/home/claude/preview_email.txt", "w", encoding="utf-8") as f:
+    with open("instance/pdfs/preview_email.txt", "w", encoding="utf-8") as f:
         f.write(texto)
     print("Prévias do e-mail salvas.")

@@ -114,7 +114,7 @@ with tempfile.TemporaryDirectory() as pasta:
         from app.config import BaseConfig
         print(BaseConfig.EMAIL_REMETENTE)
         print(BaseConfig.SMTP_HOST)
-    """ % str(pathlib.Path(__file__).resolve().parent))
+    """ % str(pathlib.Path(__file__).resolve().parent.parent))
     arquivo = pathlib.Path(pasta) / "checar.py"
     arquivo.write_text(script, encoding="utf-8")
     saida = subprocess.run(

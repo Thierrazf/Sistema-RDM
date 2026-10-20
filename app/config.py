@@ -42,10 +42,12 @@ class BaseConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
+    # --- Identificação ---------------------------------------------------
+    ORG_NOME = _valor_env("ORG_NOME", "Projeto piloto")
+
     # --- Regras de acesso ------------------------------------------------
-    ALLOWED_EMAIL_DOMAINS = _csv(
-        _valor_env("ALLOWED_EMAIL_DOMAINS", "exemplo.com.br,exemplo.com.br")
-    )
+    # Vazio = qualquer domínio. Em produção, restrinja aos domínios da organização.
+    ALLOWED_EMAIL_DOMAINS = _csv(_valor_env("ALLOWED_EMAIL_DOMAINS", ""))
     MAX_TENTATIVAS_LOGIN = int(_valor_env("MAX_TENTATIVAS_LOGIN", "5"))
     BLOQUEIO_MINUTOS = int(_valor_env("BLOQUEIO_MINUTOS", "15"))
     SENHA_TAMANHO_MINIMO = 10
@@ -108,6 +110,7 @@ class TestingConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False
+    ALLOWED_EMAIL_DOMAINS = ["exemplo.com.br"]
     # O bloqueio por tentativas continua ativo; o limite por IP atrapalharia
     # os testes que fazem muitos logins seguidos.
     RATELIMIT_ENABLED = False

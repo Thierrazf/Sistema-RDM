@@ -1,0 +1,7 @@
+nome;cargo;email;perfil;equipe
+Carlos Mendes;2º Ten;carlos.mendes@exemplo.com.br;GESTOR;
+Roberto Alves;Ten Cel;roberto.alves@exemplo.com.br;GESTOR;
+Paulo Ribeiro;;paulo.ribeiro@exemplo.com.br;ANALISTA;INFRAESTRUTURA
+Bruno Lima;;bruno.lima@exemplo.com.br;ANALISTA;BACKEND
+Ana Souza;;ana.souza@exemplo.com.br;ANALISTA;FRONTEND
+João Pereira;;joao.pereira@exemplo.com.br;ANALISTA;BANCO_DADOS

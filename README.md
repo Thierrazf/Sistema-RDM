@@ -1,280 +1,158 @@
-# Gestão de Mudanças — RDM e Crises
+# Sistema RDM — Gestão de Mudanças e Crises
 
-Sistema web para registrar Requisições de Mudança (RDM), montar o plano de
-trabalho dividido entre as equipes de infraestrutura, front-end, back-end e
-banco de dados, e comunicar a mudança por e-mail com o PDF anexado.
+> **Projeto piloto.** Versão de referência publicada para demonstração. Os dados
+> de exemplo (nomes, e-mails, organização) são fictícios.
 
-Substitui o fluxo em Word + PDF com disparo manual.
+Aplicação web para registrar **Requisições de Mudança (RDM)**, planejar a janela
+de execução entre as equipes de TI e comunicar a mudança por e-mail com o PDF
+anexado. Substitui o fluxo manual em Word + PDF.
 
----
+## Funcionalidades
 
-## O que o sistema faz
-
-- **RDM em 4 etapas** — identificação, impacto e risco, janela e plano de
+- **RDM em 4 etapas**: identificação, impacto e risco, janela e plano de
   trabalho, autorização.
-- **Plano de trabalho por equipe** — cada atividade tem equipe, ordem de
-  execução, analista responsável, duração e rollback próprio. A duração da
-  janela é a soma real das atividades, não um campo digitado.
-- **Catálogo de atividades recorrentes** — o analista escolhe do seletor em vez
-  de redigitar o que se repete a cada janela.
-- **Comunicação por e-mail** — texto padrão editável por envio,
-  pré-visualização do que será recebido, destinatários sugeridos a partir dos
-  analistas das atividades, e PDF em anexo.
-- **Crises** — registro, linha do tempo e comunicado.
-- **Relatórios gerenciais por IA** — análise de tendências de crises e RDMs
-  baseada em indicadores agregados.
-- **Trilha de acesso** — login, falha, bloqueio, logout e reset com IP e
-  user-agent, para atender auditoria.
+- **Plano de trabalho por equipe** (Infraestrutura, Front-end, Back-end, Banco de
+  Dados), com ordem, responsável, duração e rollback por atividade. A duração da
+  janela é calculada a partir das atividades.
+- **Catálogo de atividades recorrentes**, para não redigitar o que se repete.
+- **Comunicação por e-mail** com pré-visualização, destinatários sugeridos e PDF
+  anexo (Microsoft Graph ou SMTP).
+- **Registro de crises** com linha do tempo e comunicado.
+- **Relatórios gerenciais por IA** (OpenAI, Anthropic, Gemini ou endpoint
+  compatível). Só são enviados totais agregados, nunca dados pessoais.
+- **Trilha de auditoria** de acesso: login, falha, bloqueio, logout e reset, com
+  IP e user-agent.
 
----
+## Stack
 
-## Instalação (desenvolvimento)
+Python 3.12 · Flask · SQLAlchemy/Alembic · PostgreSQL (SQLite em
+desenvolvimento) · Redis · WeasyPrint · Gunicorn · Docker
 
-```bash
-git clone <url-do-repositorio>
-cd rdm-sistema
+## Como rodar
 
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-cp .env.example .env            # Windows: copy .env.example .env
-```
-
-Gere uma chave e coloque em `SECRET_KEY` no `.env`:
+### Com Docker (recomendado)
 
 ```bash
-python -c "import secrets; print(secrets.token_urlsafe(48))"
-```
-
-Crie o banco e o primeiro administrador:
-
-```bash
-export FLASK_APP=wsgi.py        # Windows: set FLASK_APP=wsgi.py
-
-flask db init                   # só na primeira vez
-flask db migrate -m "estrutura inicial"
-flask db upgrade
-
-flask criar-admin --email seu.email@exemplo.com.br --nome "Seu Nome"
-flask carregar-pessoas          # autoridades que assinam a RDM
-flask carregar-catalogo         # 21 atividades padrão das 4 equipes
-```
-
-Suba a aplicação:
-
-```bash
-flask --app wsgi run --debug
-```
-
-Acesse `http://127.0.0.1:5000`.
-
-### Relatórios gerenciais por IA
-
-Um administrador configura provedor, chave e modelo em
-**Administração → Relatórios por IA**. Há suporte nativo a OpenAI/GPT,
-Anthropic/Claude e Google/Gemini, além de endpoints públicos HTTPS compatíveis
-com OpenAI Chat Completions (por exemplo, provedores que implementem esse
-formato). Ao trocar de provedor, informe a chave correspondente. A chave fica
-cifrada no banco usando `SECRET_KEY`; mantenha esse segredo estável para
-preservar a configuração. Na página **Indicadores**, usuários autenticados
-podem gerar até cinco relatórios por hora. A chamada envia somente totais
-agregados por período, status e criticidade — nunca títulos, descrições de
-crises ou dados pessoais.
-
-### WeasyPrint no Windows
-
-A geração de PDF depende das bibliotecas GTK. No Windows, instale o
-[GTK3 Runtime](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases)
-e reinicie o terminal. No Linux:
-
-```bash
-sudo apt install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libffi-dev
-```
-
----
-
-## Produção
-
-Nunca use `flask run` nem `debug=True` em produção.
-
-```bash
-export FLASK_ENV=production
-gunicorn -w 4 -b 127.0.0.1:8000 wsgi:app
-```
-
-Com Docker:
-
-```bash
+cp .env.example .env        # preencha SECRET_KEY e POSTGRES_PASSWORD
 docker compose up -d --build
 docker compose exec web flask db upgrade
-docker compose exec web flask criar-admin --email seu.email@exemplo.com.br
+docker compose exec web flask criar-admin --email admin@exemplo.com.br
 docker compose exec web flask carregar-catalogo
 ```
 
-### Exigências antes de publicar
+Acesse `http://localhost:8000`. Para desligar: `docker compose down`. Os dados
+continuam salvos no volume.
 
-| Item | Por quê |
+> O compose sobe em modo produção, em que o cookie de sessão exige HTTPS. Em
+> `localhost` funciona. Para acesso pela rede, coloque um proxy HTTPS (nginx/IIS)
+> na frente da porta 8000.
+
+### Local (desenvolvimento)
+
+```bash
+python -m venv venv
+source venv/bin/activate     # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env         # Windows: copy .env.example .env
+
+flask --app wsgi db upgrade
+flask --app wsgi criar-admin --email admin@exemplo.com.br
+flask --app wsgi carregar-catalogo
+flask --app wsgi run --debug
+```
+
+Acesse `http://127.0.0.1:5000`. No Windows, a geração de PDF exige o
+[GTK3 Runtime](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases).
+
+### Comandos de administração
+
+| Comando | Função |
 |---|---|
-| `SECRET_KEY` forte no ambiente | A aplicação se recusa a subir sem ela em produção |
-| `FLASK_ENV=production` | Ativa `SESSION_COOKIE_SECURE` e HSTS |
-| HTTPS no proxy (nginx/IIS) | O cookie de sessão só trafega em conexão segura |
-| PostgreSQL em vez de SQLite | Concorrência de escrita e backup consistente |
-| `RATELIMIT_STORAGE_URI` com Redis | Com mais de um worker, o limite em memória não é compartilhado |
-| Conta SMTP dedicada | Não reutilize a caixa funcional de uma pessoa |
-| Rotina de backup do banco | Trilha de acesso e histórico têm valor de auditoria |
+| `flask criar-admin --email <e-mail>` | Cria o primeiro administrador (pede a senha) |
+| `flask carregar-catalogo` | Carrega as atividades padrão das 4 equipes |
+| `flask carregar-pessoas` | Cadastra autorizadores e analistas a partir de `pessoas.csv` (modelo: `pessoas.example.csv`) |
+| `flask testar-email --para <e-mail>` | Envia um e-mail de teste e mostra o erro exato |
 
----
+## Configuração
 
-## Pessoas da RDM
+Todas as variáveis estão documentadas em [`.env.example`](.env.example). As principais:
 
-Solicitante, revisor técnico, analista das atividades e autorizador saem todos
-do cadastro de usuários — não são mais campos de texto livre.
+| Variável | Uso |
+|---|---|
+| `SECRET_KEY` | Obrigatória em produção (mín. 32 caracteres). Também cifra as chaves de IA |
+| `ORG_NOME` | Nome da organização exibido no cabeçalho |
+| `ALLOWED_EMAIL_DOMAINS` | Domínios de e-mail autorizados. Vazio libera qualquer domínio |
+| `DATABASE_URL` | Banco de dados. Sem ela, usa SQLite local |
+| `EMAIL_BACKEND` | `auto`, `graph` ou `smtp` |
+| `GRAPH_*` / `SMTP_*` | Credenciais de envio de e-mail |
 
-Quem assina ou autoriza sem precisar usar o sistema (autoridades da corporação)
-é cadastrado com a marcação **"Apenas referência — não acessa o sistema"**:
-aparece nos seletores, entra no e-mail e no PDF com a patente, mas não faz login
-nem tem senha. O comando `flask carregar-pessoas` já cria as autoridades
-iniciais; ajuste os e-mails em Administração → Usuários.
+Dados da organização (`.env`, `pessoas.csv`, banco e PDFs) ficam fora do
+repositório.
 
-O campo **cargo ou patente** aparece junto do nome em todo lugar
-("Funcionário 1", "Funcionário 2").
+### E-mail via Microsoft Graph
+
+Recomendado, porque a Microsoft está desativando a autenticação SMTP:
+
+1. No Entra ID, registre um aplicativo e crie um segredo de cliente.
+2. Conceda a permissão de aplicativo `Mail.Send` com consentimento do administrador.
+3. Restrinja o aplicativo a uma única caixa com `New-ApplicationAccessPolicy`.
+   Sem isso, ele pode enviar como qualquer usuário do tenant.
+4. Preencha `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET` e
+   `EMAIL_REMETENTE` no `.env`.
+
+O segredo expira em no máximo 24 meses. Anote a data.
 
 ## Perfis de acesso
 
-| Perfil | Pode |
+| Perfil | Permissões |
 |---|---|
-| **Analista** | Criar e editar as próprias RDMs, registrar andamento e status de atividade |
-| **Gestor** | Tudo do analista, mais aprovar/alterar status, enviar comunicados e excluir |
-| **Administrador** | Tudo, mais gestão de usuários, catálogo e trilha de acesso |
+| **Analista** | Cria e edita as próprias RDMs, registra andamento das atividades |
+| **Gestor** | Tudo do analista, mais aprovar, alterar status, enviar comunicados e excluir |
+| **Administrador** | Tudo, mais usuários, catálogo, relatórios por IA e trilha de acesso |
 
-O envio de e-mail também pode ser liberado individualmente para um analista
-pelo campo "Pode disparar comunicados por e-mail".
+Quem só assina ou autoriza pode ser cadastrado como **"Apenas referência"**:
+aparece nos seletores, no e-mail e no PDF, mas não faz login.
 
----
+## Segurança
+
+- Senhas com hash, CSRF, rate limit e bloqueio de conta por tentativas.
+- Token de redefinição de senha armazenado como hash.
+- Cabeçalhos de segurança e HSTS em produção.
+- Chaves de API de IA cifradas no banco.
+- Bloqueio de chamadas de IA para IPs privados (proteção contra SSRF).
+
+Antes de usar em produção: HTTPS no proxy, PostgreSQL, Redis para o rate limit,
+conta de e-mail dedicada e rotina de backup do banco.
+
+## Testes
+
+```bash
+python -m tests.teste_fluxo         # login, RDM, encerramento, permissões, usuários
+python -m tests.teste_telas         # renderiza todas as telas
+python -m tests.teste_seguranca     # senhas, cabeçalhos, CSRF, controle de acesso
+python -m tests.teste_email         # Graph, SMTP e tratamento de falhas
+python -m tests.teste_relatorio_ia  # configuração cifrada e dados agregados
+python -m tests.teste_pdf           # gera um PDF de exemplo em instance/pdfs/
+```
 
 ## Estrutura
 
 ```
 app/
-  __init__.py            factory, blueprints, CLI, handlers de erro
-  config.py              configuração por ambiente
-  extensions.py          db, migrate, csrf, login, limiter
-  models.py              User, RDM, Atividade, Catalogo, Crise, LogAcesso
-  security.py            decorators, validações, auditoria, cabeçalhos
-  blueprints/            auth, painel, rdm, crise, admin
-  services/
-    email_service.py     montagem e disparo (assíncrono)
-    pdf_service.py       WeasyPrint
-  templates/
-    email/               corpo dos e-mails (HTML + texto)
-    pdf/                 documentos A4
-  static/css/app.css     design system
-wsgi.py
-teste_fluxo.py           teste funcional do fluxo principal
-teste_pdf.py             gera um PDF de exemplo para conferência
+  __init__.py        factory, blueprints, comandos CLI
+  config.py          configuração por ambiente
+  models.py          User, RDM, Atividade, Catálogo, Crise, LogAcesso
+  security.py        permissões, validações, auditoria
+  blueprints/        auth, painel, rdm, crise, admin
+  services/          e-mail, Graph, PDF, relatórios por IA
+  templates/         telas, e-mails e PDFs
+migrations/          Alembic
+tests/               testes funcionais
+wsgi.py              ponto de entrada
 ```
 
----
+## Status
 
-## Testes
-
-```bash
-python teste_fluxo.py     # login, RDM, encerramento, permissões, usuários
-python teste_email.py     # escolha do mecanismo, Graph API, tratamento de falhas
-python teste_telas.py     # abre todas as telas e falha se alguma quebrar
-python teste_seguranca.py # hash de senha, cabeçalhos, CSRF, controle de acesso
-python teste_relatorio_ia.py # configuração cifrada e análise sem dados pessoais
-python teste_pdf.py       # gera instance/pdfs/RDM-2026-001.pdf
-```
-
-Rode os três primeiros depois de qualquer alteração — juntos levam poucos
-segundos e pegam a maior parte das regressões.
-
----
-
-## Configurar o envio de e-mail
-
-O sistema envia por **Microsoft Graph** (recomendado) ou por **SMTP**.
-
-A Microsoft desativou a autenticação SMTP na maioria dos tenants e vai removê-la
-de vez. Se aparecer o erro `SmtpClientAuthentication is disabled for the Tenant`,
-não adianta trocar a senha — é preciso usar a Graph.
-
-### Registro no Entra ID (feito uma vez, por quem administra o Microsoft 365)
-
-1. Portal do Azure → **Microsoft Entra ID** → **Registros de aplicativo** →
-   **Novo registro**. Nome sugerido: `Sistema RDM`. Contas apenas deste
-   diretório organizacional.
-2. Na página do aplicativo, anote **ID do aplicativo (cliente)** e
-   **ID do diretório (locatário)**.
-3. **Certificados e segredos** → **Novo segredo do cliente**. Copie o campo
-   **Valor** imediatamente (ele some ao sair da tela) — não o ID do segredo.
-4. **Permissões de API** → **Adicionar** → **Microsoft Graph** →
-   **Permissões de aplicativo** → `Mail.Send`. Em seguida clique em
-   **Conceder consentimento do administrador**.
-5. **Restrinja a uma única caixa** — sem isso o aplicativo pode enviar como
-   qualquer usuário do tenant. No Exchange Online PowerShell:
-
-   ```powershell
-   New-ApplicationAccessPolicy -AppId <ID-do-aplicativo> `
-     -PolicyScopeGroupId <caixa-do-sistema@dominio> `
-     -AccessRight RestrictAccess `
-     -Description "Sistema RDM - envio restrito"
-   ```
-
-No `.env`:
-
-```
-EMAIL_BACKEND=auto
-GRAPH_TENANT_ID=<ID do diretório>
-GRAPH_CLIENT_ID=<ID do aplicativo>
-GRAPH_CLIENT_SECRET=<Valor do segredo>
-EMAIL_REMETENTE=<caixa que envia>
-```
-
-O segredo tem validade (24 meses no máximo). Anote a data de expiração: quando
-vencer, o envio para de funcionar até que um novo seja gerado.
-
-## Diagnosticar o envio de e-mail
-
-Se o comunicado não chegar, rode:
-
-```bash
-flask testar-email --para seu.email@exemplo.com
-```
-
-O comando mostra o que foi lido do `.env`, envia de forma síncrona e imprime o
-erro exato do servidor SMTP, com a provável causa. É mais rápido que investigar
-pela tela, onde o envio é assíncrono.
-
-Pontos de atenção:
-
-- O `.env` só é lido quando a aplicação sobe — reinicie após editar.
-- Confira se o arquivo se chama `.env` mesmo (não `.env.txt` nem `.env.example`).
-- No SMTP, `SMTP_USER` e `EMAIL_REMETENTE` devem ser o mesmo endereço.
-- Contas com MFA exigem senha de aplicativo; a senha normal é recusada.
-- O envio é **síncrono**: a tela só confirma quando o servidor aceitou, e
-  mostra o erro real quando recusa.
-
-## Personalizar o texto padrão do e-mail
-
-O texto de abertura fica em `app/services/email_service.py`, na constante
-`TEXTO_PADRAO_RDM`. O layout do e-mail está em `app/templates/email/rdm.html`
-(versão HTML) e `rdm.txt` (texto puro). Quem envia pode ajustar o texto na
-tela de pré-visualização — a alteração vale só para aquele disparo.
-
----
-
-## O que mudou em relação à versão anterior
-
-- Corrigido o bug que impedia o cadastro de usuários novos e criava duplicados
-- Removida a rota `/seed-user`, que expunha um administrador com senha conhecida
-- `SECRET_KEY` saiu do código; CSRF, rate limit e bloqueio de conta adicionados
-- Token de reset passou a ser armazenado como hash e entregue por e-mail
-- Atividades saíram de um campo de texto único para tabela própria por equipe
-- Datas deixaram de ser texto e viraram `DateTime`
-- Migrations com Alembic — alterar o modelo não exige mais recriar o banco
-- `app.py` de 1.005 linhas dividido em blueprints e serviços
-- wkhtmltopdf (arquivado) substituído por WeasyPrint
-- Blueprints órfãos que referenciavam campos inexistentes foram removidos
+Piloto funcional, sem garantias de suporte. Todos os direitos reservados. O
+código está disponível para consulta e não tem licença de uso, cópia ou
+redistribuição.

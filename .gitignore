@@ -8,3 +8,6 @@ venv/
 instance/
 migrations/versions/*.pyc
 .DS_Store
+
+# Dados reais da organização (use pessoas.example.csv como modelo)
+pessoas.csv
